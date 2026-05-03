@@ -24,6 +24,10 @@ export function getAccessToken() {
   return accessToken;
 }
 
+export function getRefreshToken() {
+  return refreshToken;
+}
+
 export const api: AxiosInstance = axios.create({
   baseURL: API_URL,
   withCredentials: false,

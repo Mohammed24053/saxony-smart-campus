@@ -2,7 +2,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { api, setTokens } from './api';
+import { api, getRefreshToken, setTokens } from './api';
 
 export type AuthUser = {
   id: string;
@@ -38,8 +38,11 @@ export const useAuth = create<State>()(
         }
       },
       async logout() {
+        const refreshToken = getRefreshToken();
         try {
-          await api.post('/auth/logout', {});
+          if (refreshToken) {
+            await api.post('/auth/logout', { refreshToken });
+          }
         } catch {/* ignore */}
         setTokens(null, null);
         set({ user: null });

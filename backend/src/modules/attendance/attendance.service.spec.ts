@@ -63,9 +63,11 @@ function setup(opts: {
     },
   } as never;
 
+  const atRiskQueue: any = { add: jest.fn().mockResolvedValue(undefined) };
+
   return {
-    svc: new AttendanceService(prisma, redis, qr, gps, gateway),
-    qr, gps, gateway, redis, prisma,
+    svc: new AttendanceService(prisma, redis, qr, gps, gateway, atRiskQueue),
+    qr, gps, gateway, redis, prisma, atRiskQueue,
   };
 }
 
@@ -196,5 +198,38 @@ describe('AttendanceService.scan — 5-step verification', () => {
     await expect(
       svc.scan('uni1', { ...studentPrincipal, role: 'doctor' }, { payload: '{}' }),
     ).rejects.toMatchObject({ code: ErrorCodes.FORBIDDEN });
+  });
+});
+
+describe('AttendanceService.endSession', () => {
+  it('enqueues an at-risk check after closing the session', async () => {
+    const doctorPrincipal: AuthPrincipal = {
+      userId: 'doc1', role: 'doctor', universityId: 'uni1', email: 'doc@x.com',
+    };
+    const session = {
+      id: 's1',
+      status: 'active',
+      doctorId: 'doc1',
+      scheduleSlot: { sectionId: 'sec1', universityId: 'uni1', doctorId: 'doc1' },
+    };
+    const { svc, atRiskQueue, prisma, gateway } = setup({ session });
+    (prisma.attendanceSession as any).update = jest
+      .fn()
+      .mockResolvedValue({ ...session, status: 'closed' });
+    (prisma.attendanceSession as any).findUniqueOrThrow = jest
+      .fn()
+      .mockResolvedValue(session);
+
+    await svc.endSession('uni1', doctorPrincipal, 's1');
+
+    expect(prisma.attendanceSession.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 's1' } }),
+    );
+    expect(gateway.emitTimeout).toHaveBeenCalledWith('s1');
+    expect(atRiskQueue.add).toHaveBeenCalledWith(
+      'check-absences',
+      { sessionId: 's1' },
+      expect.objectContaining({ removeOnComplete: true }),
+    );
   });
 });

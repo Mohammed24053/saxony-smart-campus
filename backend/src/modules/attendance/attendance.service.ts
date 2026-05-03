@@ -1,3 +1,4 @@
+import { InjectQueue } from '@nestjs/bull';
 import { Injectable, Logger } from '@nestjs/common';
 import {
   AttendanceRecord,
@@ -5,6 +6,7 @@ import {
   AttendanceStatus,
   SessionStatus,
 } from '@prisma/client';
+import { Queue } from 'bull';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import { AppException } from '../../common/errors/app.exception';
@@ -31,6 +33,7 @@ export class AttendanceService {
     private readonly qr: QrTokenService,
     private readonly gps: GpsService,
     private readonly gateway: AttendanceGateway,
+    @InjectQueue('at-risk') private readonly atRiskQueue: Queue,
   ) {}
 
   async startSession(
@@ -109,6 +112,17 @@ export class AttendanceService {
     });
     await this.markAbsentees(session.id);
     this.gateway.emitTimeout(session.id);
+    try {
+      await this.atRiskQueue.add(
+        'check-absences',
+        { sessionId: session.id },
+        { removeOnComplete: true, removeOnFail: true },
+      );
+    } catch (e) {
+      this.logger.warn(
+        `Failed to enqueue at-risk check for session ${session.id}: ${(e as Error).message}`,
+      );
+    }
     return closed;
   }
 

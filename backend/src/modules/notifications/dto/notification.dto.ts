@@ -1,6 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { NotificationType } from '@prisma/client';
-import { IsArray, IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsArray, IsEnum, IsIn, IsOptional, IsString, MinLength } from 'class-validator';
+
+export const NOTIFICATION_TARGET_TYPES = ['user', 'section', 'subject', 'broadcast'] as const;
+export type NotificationTargetType = (typeof NOTIFICATION_TARGET_TYPES)[number];
 
 export class SendNotificationDto {
   @ApiProperty({ enum: NotificationType })
@@ -16,9 +19,9 @@ export class SendNotificationDto {
   @IsString()
   body!: string;
 
-  @ApiProperty({ description: 'user | section | subject | broadcast' })
-  @IsString()
-  targetType!: 'user' | 'section' | 'subject' | 'broadcast';
+  @ApiProperty({ enum: NOTIFICATION_TARGET_TYPES, description: 'user | section | subject | broadcast' })
+  @IsIn(NOTIFICATION_TARGET_TYPES as unknown as string[])
+  targetType!: NotificationTargetType;
 
   @ApiPropertyOptional()
   @IsOptional()

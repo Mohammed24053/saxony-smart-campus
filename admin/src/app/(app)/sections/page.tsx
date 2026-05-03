@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { api, unwrap, type Paginated } from '@/lib/api';
+import { api, unwrapPaginated } from '@/lib/api';
 import { Card, Table, Td, Th } from '@/components/ui';
 
 type Section = {
@@ -11,7 +11,7 @@ type Section = {
 export default function SectionsPage() {
   const q = useQuery({
     queryKey: ['sections'],
-    queryFn: () => unwrap<Paginated<Section>>(api.get('/sections', { params: { page: 1, pageSize: 100 } })),
+    queryFn: () => unwrapPaginated<Section>(api.get('/sections', { params: { page: 1, pageSize: 100 } })),
   });
   return (
     <div className="space-y-6">

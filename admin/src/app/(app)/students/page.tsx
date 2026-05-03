@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api, unwrap, type Paginated } from '@/lib/api';
+import { api, unwrapPaginated } from '@/lib/api';
 import { Button, Card, Input, Table, Td, Th } from '@/components/ui';
 
 type Student = {
@@ -23,7 +23,7 @@ export default function StudentsPage() {
   const q = useQuery({
     queryKey: ['students', page, search],
     queryFn: () =>
-      unwrap<Paginated<Student>>(api.get('/students', { params: { page, pageSize: 25, search } })),
+      unwrapPaginated<Student>(api.get('/students', { params: { page, pageSize: 25, search } })),
   });
 
   const importMu = useMutation({

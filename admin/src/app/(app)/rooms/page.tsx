@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { api, unwrap, type Paginated } from '@/lib/api';
+import { api, unwrapPaginated } from '@/lib/api';
 import { Card, Table, Td, Th } from '@/components/ui';
 
 type Room = {
@@ -12,7 +12,7 @@ type Room = {
 export default function RoomsPage() {
   const q = useQuery({
     queryKey: ['rooms'],
-    queryFn: () => unwrap<Paginated<Room>>(api.get('/rooms', { params: { page: 1, pageSize: 100 } })),
+    queryFn: () => unwrapPaginated<Room>(api.get('/rooms', { params: { page: 1, pageSize: 100 } })),
   });
   return (
     <div className="space-y-6">

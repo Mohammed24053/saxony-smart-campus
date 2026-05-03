@@ -83,9 +83,25 @@ api.interceptors.response.use(
 );
 
 export type Envelope<T> = { success: boolean; data: T; meta?: Record<string, unknown> };
-export type Paginated<T> = { items: T[]; total: number; page: number; pageSize: number };
+export type PaginationMeta = { page: number; pageSize: number; total: number; totalPages: number };
+export type Paginated<T> = { items: T[]; total: number; page: number; pageSize: number; totalPages: number };
 
 export async function unwrap<T>(p: Promise<{ data: Envelope<T> }>): Promise<T> {
   const r = await p;
   return r.data.data;
+}
+
+export async function unwrapPaginated<T>(
+  p: Promise<{ data: { data: T[]; meta?: Partial<PaginationMeta> } }>,
+): Promise<Paginated<T>> {
+  const r = await p;
+  const items = r.data.data ?? [];
+  const meta = r.data.meta ?? {};
+  return {
+    items,
+    total: meta.total ?? items.length,
+    page: meta.page ?? 1,
+    pageSize: meta.pageSize ?? items.length,
+    totalPages: meta.totalPages ?? 1,
+  };
 }

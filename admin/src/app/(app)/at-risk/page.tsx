@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { api, unwrap, type Paginated } from '@/lib/api';
+import { api, unwrapPaginated } from '@/lib/api';
 import { Card, Table, Td, Th } from '@/components/ui';
 
 type AtRiskRecord = {
@@ -25,7 +25,7 @@ const LEVEL_LABEL: Record<string, string> = {
 export default function AtRiskPage() {
   const q = useQuery({
     queryKey: ['at-risk'],
-    queryFn: () => unwrap<Paginated<AtRiskRecord>>(api.get('/at-risk', { params: { page: 1, pageSize: 100 } })),
+    queryFn: () => unwrapPaginated<AtRiskRecord>(api.get('/at-risk', { params: { page: 1, pageSize: 100 } })),
   });
   return (
     <div className="space-y-6">

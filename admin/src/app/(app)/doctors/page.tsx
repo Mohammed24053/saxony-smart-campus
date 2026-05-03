@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api, unwrap, type Paginated } from '@/lib/api';
+import { api, unwrapPaginated } from '@/lib/api';
 import { Button, Card, Input, Table, Td, Th } from '@/components/ui';
 
 type Doctor = {
@@ -14,7 +14,7 @@ export default function DoctorsPage() {
   const [search, setSearch] = useState('');
   const q = useQuery({
     queryKey: ['doctors', page, search],
-    queryFn: () => unwrap<Paginated<Doctor>>(api.get('/doctors', { params: { page, pageSize: 25, search } })),
+    queryFn: () => unwrapPaginated<Doctor>(api.get('/doctors', { params: { page, pageSize: 25, search } })),
   });
   return (
     <div className="space-y-6">

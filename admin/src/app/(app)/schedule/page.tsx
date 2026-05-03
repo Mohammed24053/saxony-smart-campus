@@ -18,7 +18,7 @@ export default function SchedulePage() {
   const qc = useQueryClient();
   const slotsQ = useQuery({
     queryKey: ['schedule'],
-    queryFn: () => unwrap<{ slots: Slot[] }>(api.get('/schedule')),
+    queryFn: () => unwrap<Slot[]>(api.get('/schedule')),
   });
   const generateMu = useMutation({
     mutationFn: () => api.post('/schedule/generate'),
@@ -26,12 +26,12 @@ export default function SchedulePage() {
   });
   const conflictsQ = useQuery({
     queryKey: ['schedule', 'conflicts'],
-    queryFn: () => unwrap<{ items: { reason: string; subjectId: string }[] }>(api.get('/schedule/conflicts')),
+    queryFn: () => unwrap<{ reason: string; subjectId: string }[]>(api.get('/schedule/conflicts')),
   });
 
   const grid = useMemo(() => {
     const cells: Record<string, Slot[]> = {};
-    (slotsQ.data?.slots ?? []).forEach((s) => {
+    (slotsQ.data ?? []).forEach((s) => {
       const key = `${s.dayOfWeek}-${s.startTime}`;
       cells[key] = [...(cells[key] ?? []), s];
     });
@@ -45,7 +45,7 @@ export default function SchedulePage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-semibold">Schedule</h1>
-          <p className="text-sm text-muted-foreground">{slotsQ.data?.slots.length ?? 0} scheduled slots</p>
+          <p className="text-sm text-muted-foreground">{slotsQ.data?.length ?? 0} scheduled slots</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={() => generateMu.mutate()} disabled={generateMu.isPending}>
@@ -56,11 +56,11 @@ export default function SchedulePage() {
           </Button>
         </div>
       </div>
-      {conflictsQ.data && conflictsQ.data.items.length > 0 && (
+      {conflictsQ.data && conflictsQ.data.length > 0 && (
         <Card className="border-destructive/30 bg-destructive/5 p-4">
-          <div className="font-semibold text-destructive">{conflictsQ.data.items.length} conflicts</div>
+          <div className="font-semibold text-destructive">{conflictsQ.data.length} conflicts</div>
           <ul className="mt-2 list-disc pl-6 text-sm text-destructive/90">
-            {conflictsQ.data.items.slice(0, 5).map((c, i) => (
+            {conflictsQ.data.slice(0, 5).map((c, i) => (
               <li key={i}>{c.reason} — subject {c.subjectId}</li>
             ))}
           </ul>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { api, unwrap, type Paginated } from '@/lib/api';
+import { api, unwrapPaginated } from '@/lib/api';
 import { Card, Table, Td, Th } from '@/components/ui';
 
 type Subject = {
@@ -12,7 +12,7 @@ type Subject = {
 export default function SubjectsPage() {
   const q = useQuery({
     queryKey: ['subjects'],
-    queryFn: () => unwrap<Paginated<Subject>>(api.get('/subjects', { params: { page: 1, pageSize: 100 } })),
+    queryFn: () => unwrapPaginated<Subject>(api.get('/subjects', { params: { page: 1, pageSize: 100 } })),
   });
   return (
     <div className="space-y-6">

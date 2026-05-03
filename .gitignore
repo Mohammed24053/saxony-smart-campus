@@ -1,0 +1,64 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+**/.pnpm-debug.log*
+**/yarn-error.log*
+
+# Build output
+dist/
+build/
+.next/
+out/
+**/*.tsbuildinfo
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+**/.env
+!**/.env.example
+
+# Prisma generated client
+backend/prisma/generated/
+backend/node_modules/.prisma/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Editor
+.vscode/
+.idea/
+.DS_Store
+
+# Test
+coverage/
+.nyc_output/
+
+# Flutter
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.packages
+mobile/.pub-cache/
+mobile/.pub/
+mobile/build/
+mobile/ios/Pods/
+mobile/android/.gradle/
+mobile/android/local.properties
+mobile/**/GeneratedPluginRegistrant.*
+mobile/**/*.g.dart
+mobile/**/*.freezed.dart
+mobile/**/*.mocks.dart
+
+# Docker volumes
+.data/
+postgres-data/
+redis-data/
+minio-data/
+
+# Misc
+*.pem
+*.key
+!backend/prisma/dev.db.example

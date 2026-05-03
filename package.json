@@ -1,0 +1,23 @@
+{
+  "name": "saxony-smart-campus",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Saxony Egypt University Smart Campus System — backend, admin, and mobile.",
+  "packageManager": "pnpm@9.15.1",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
+    "prepare": "husky || true"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3",
+    "husky": "^9.1.6"
+  }
+}

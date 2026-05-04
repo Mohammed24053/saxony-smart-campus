@@ -2,22 +2,99 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Saxony Egypt University — Smart Campus admin theme tokens.
+ *
+ * Brand palette (extracted from official SEU logo):
+ *   navy   #31313B  — sidebar, headlines
+ *   red    #B1222A  — primary actions, CTAs, danger
+ *   gold   #E4BD4F  — accents, badges, KPI top borders, warnings
+ *   cream  #F3EDE4  — page background
+ *   gray   #67666A  — subtext, muted borders
+ *
+ * Everything below is exposed as CSS custom properties so the same theme
+ * powers Tailwind utilities, Recharts SVGs, and bespoke `style` overrides.
+ */
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 47.4% 11.2%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 47.4% 11.2%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --border: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --radius: 0.5rem;
+    /* Page surfaces */
+    --background: 32 33% 93%;          /* #F3EDE4 cream */
+    --foreground: 240 7% 21%;          /* #31313B navy */
+    --card: 0 0% 100%;                 /* #FFFFFF */
+    --card-foreground: 240 7% 21%;
+    --muted: 32 25% 88%;               /* slightly darker cream for muted surfaces */
+    --muted-foreground: 240 2% 41%;    /* #67666A gray */
+    --border: 240 7% 21% / 0.12;
+    --ring: 357 67% 41%;               /* #B1222A red */
+
+    /* Brand-driven semantic tokens */
+    --primary: 357 67% 41%;            /* SEU red */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 43 71% 60%;           /* SEU gold */
+    --secondary-foreground: 240 7% 21%;
+    --accent: 43 71% 60%;              /* SEU gold */
+    --accent-foreground: 240 7% 21%;
+    --destructive: 357 67% 41%;        /* SEU red doubles as destructive */
+    --destructive-foreground: 0 0% 100%;
+
+    /* Sidebar (navy) */
+    --sidebar: 240 7% 21%;             /* #31313B */
+    --sidebar-foreground: 32 33% 93%;  /* cream */
+    --sidebar-accent: 43 71% 60%;      /* gold */
+
+    /* Radii (per design spec) */
+    --radius-lg: 16px;                 /* cards */
+    --radius-md: 10px;                 /* buttons, inputs */
+    --radius-sm: 6px;
+  }
+
+  * { @apply border-border; }
+  html, body { height: 100%; }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: 'cv11', 'ss01', 'ss03';
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Visible focus ring across the app — accessibility. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
 }
-* { @apply border-border; }
-body { @apply bg-background text-foreground; }
+
+/* Skeleton shimmer surface (token-driven so it adapts to dark mode later). */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted)) 0%,
+    hsl(var(--muted) / 0.5) 50%,
+    hsl(var(--muted)) 100%
+  );
+  background-size: 200% 100%;
+  @apply animate-shimmer rounded-md;
+}
+
+/* Geometric pattern used by the login page background. */
+.seu-pattern {
+  background-color: #31313B;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(228, 189, 79, 0.06) 0, transparent 30%),
+    radial-gradient(circle at 80% 70%, rgba(177, 34, 42, 0.10) 0, transparent 35%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.02) 25%, transparent 25%),
+    linear-gradient(225deg, rgba(255, 255, 255, 0.02) 25%, transparent 25%);
+  background-size: 100% 100%, 100% 100%, 24px 24px, 24px 24px;
+}
+
+/* Reduce-motion respect — disable non-essential animations. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

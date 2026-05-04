@@ -13,11 +13,11 @@ export interface AttendanceChartProps {
 }
 
 /**
- * Brand-coloured attendance trend.
+ * Brand-coloured attendance trend (Round 2 — denser axis, smaller fonts).
  * Recharts re-runs its line-draw animation on each data update, which gives
  * us the spec's "line draws itself" effect for free at mount time.
  */
-export function AttendanceChart({ data, height = 280 }: AttendanceChartProps) {
+export function AttendanceChart({ data, height = 220 }: AttendanceChartProps) {
   const formatted = useMemo(
     () => data.map((d) => ({ ...d, date: d.date?.slice(5) ?? '' })),
     [data],
@@ -26,43 +26,44 @@ export function AttendanceChart({ data, height = 280 }: AttendanceChartProps) {
   return (
     <div style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={formatted} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+        <AreaChart data={formatted} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="seu-rate" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={SEU.red} stopOpacity={0.32} />
+              <stop offset="0%" stopColor={SEU.red} stopOpacity={0.30} />
               <stop offset="100%" stopColor={SEU.red} stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid vertical={false} stroke={SEU.gray} strokeOpacity={0.15} strokeDasharray="3 3" />
-          <XAxis dataKey="date" tickLine={false} axisLine={false} stroke={SEU.gray} fontSize={11} />
+          <CartesianGrid vertical={false} stroke={SEU.gray} strokeOpacity={0.12} strokeDasharray="2 4" />
+          <XAxis dataKey="date" tickLine={false} axisLine={false} stroke={SEU.gray} fontSize={10} />
           <YAxis
             domain={[0, 100]}
             tickLine={false}
             axisLine={false}
             stroke={SEU.gray}
-            fontSize={11}
+            fontSize={10}
             tickFormatter={(v) => `${v}%`}
-            width={36}
+            width={32}
           />
           <Tooltip
             contentStyle={{
-              borderRadius: 10,
-              border: '1px solid rgba(49,49,59,0.12)',
-              boxShadow: '0 2px 16px rgba(49,49,59,0.08)',
+              borderRadius: 8,
+              border: '1px solid rgba(49,49,59,0.10)',
+              fontSize: 12,
+              boxShadow: '0 4px 16px rgba(49,49,59,0.10)',
             }}
             formatter={(v: number) => [`${v}%`, 'Rate']}
-            labelStyle={{ color: SEU.navy, fontWeight: 600 }}
+            labelStyle={{ color: SEU.navy, fontWeight: 600, fontSize: 11 }}
           />
           <Area
             type="monotone"
             dataKey="rate"
             stroke={SEU.red}
-            strokeWidth={2.5}
+            strokeWidth={2}
             fill="url(#seu-rate)"
             isAnimationActive
-            animationDuration={1000}
+            animationDuration={900}
             animationEasing="ease-out"
-            activeDot={{ r: 4, fill: SEU.red }}
+            activeDot={{ r: 3, fill: SEU.red }}
             dot={false}
           />
         </AreaChart>

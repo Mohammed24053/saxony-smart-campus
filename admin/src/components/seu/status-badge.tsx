@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { CheckCircle2, Clock, XCircle, AlertTriangle, Ban, Info } from 'lucide-react';
 
 const badgeVariants = cva(
-  'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors',
+  'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium transition-colors',
   {
     variants: {
       tone: {
@@ -58,7 +58,7 @@ export function StatusBadge({ tone, className, children, noIcon }: StatusBadgePr
   const label = children ?? LABELS[tone ?? 'neutral'] ?? '—';
   return (
     <span className={cn(badgeVariants({ tone }), className)}>
-      {!noIcon && <Icon className="h-3.5 w-3.5" />}
+      {!noIcon && <Icon className="h-3 w-3" />}
       {label}
     </span>
   );

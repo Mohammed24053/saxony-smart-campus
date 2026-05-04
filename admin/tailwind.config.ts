@@ -4,7 +4,7 @@ const config: Config = {
   darkMode: ['class'],
   content: ['./src/**/*.{ts,tsx}'],
   theme: {
-    container: { center: true, padding: '2rem', screens: { '2xl': '1400px' } },
+    container: { center: true, padding: '1.5rem', screens: { '2xl': '1440px' } },
     extend: {
       colors: {
         // SEU brand palette (extracted from official logo).
@@ -41,24 +41,47 @@ const config: Config = {
           accent: 'hsl(var(--sidebar-accent))',
         },
       },
+      // Round 2 — tighter, sharper.
       borderRadius: {
         lg: 'var(--radius-lg)',
         md: 'var(--radius-md)',
         sm: 'var(--radius-sm)',
       },
+      // Quieter shadow vocabulary; brand-tinted "lift" on primary buttons.
       boxShadow: {
-        card: '0 2px 16px rgba(49, 49, 59, 0.08)',
-        'card-lift': '0 6px 24px rgba(49, 49, 59, 0.12)',
+        card: '0 1px 2px rgba(49, 49, 59, 0.04), 0 0 0 1px rgba(49, 49, 59, 0.04)',
+        'card-lift': '0 4px 16px rgba(49, 49, 59, 0.10), 0 0 0 1px rgba(49, 49, 59, 0.06)',
         modal: '0 8px 40px rgba(49, 49, 59, 0.18)',
         'btn-hover': '0 4px 16px rgba(177, 34, 42, 0.28)',
+        'inner-line': 'inset 0 -1px 0 rgba(49, 49, 59, 0.08)',
       },
+      // Linear-style monospace fallback for IDs / numbers.
       fontFamily: {
         sans: ['var(--font-inter)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+      },
+      // Density-aware spacing helpers (in addition to the standard 4px scale).
+      spacing: {
+        header: 'var(--density-header)',
+        row: 'var(--density-row)',
+        th: 'var(--density-th)',
+        ctl: 'var(--density-input)',
+      },
+      // Tighter type scale (Linear default).
+      fontSize: {
+        '2xs': ['10px', { lineHeight: '1.4' }],
+        xs:    ['11px', { lineHeight: '1.45' }],
+        sm:    ['12px', { lineHeight: '1.5' }],
+        base:  ['13px', { lineHeight: '1.55' }],
+        lg:    ['15px', { lineHeight: '1.5' }],
+        xl:    ['18px', { lineHeight: '1.4' }],
+        '2xl': ['22px', { lineHeight: '1.3' }],
+        '3xl': ['28px', { lineHeight: '1.2' }],
       },
       keyframes: {
         // Page enter
         'fade-up': {
-          '0%': { opacity: '0', transform: 'translateY(16px)' },
+          '0%': { opacity: '0', transform: 'translateY(12px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         // Sidebar active red border slide-in
@@ -88,18 +111,18 @@ const config: Config = {
         },
         // Modal spring
         'scale-in': {
-          '0%': { opacity: '0', transform: 'scale(0.92)' },
+          '0%': { opacity: '0', transform: 'scale(0.94)' },
           '100%': { opacity: '1', transform: 'scale(1)' },
         },
       },
       animation: {
-        'fade-up': 'fade-up 300ms cubic-bezier(0.22, 1, 0.36, 1) both',
+        'fade-up': 'fade-up 220ms cubic-bezier(0.22, 1, 0.36, 1) both',
         'border-slide-in': 'border-slide-in 150ms ease-out both',
         shimmer: 'shimmer 1.5s ease-in-out infinite',
         drain: 'drain 4s linear forwards',
         'pulse-ring': 'pulse-ring 1.6s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'live-dot': 'live-dot 1.4s ease-in-out infinite',
-        'scale-in': 'scale-in 250ms cubic-bezier(0.34, 1.56, 0.64, 1) both',
+        'scale-in': 'scale-in 200ms cubic-bezier(0.34, 1.56, 0.64, 1) both',
       },
     },
   },

@@ -42,27 +42,50 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
       body: Column(
         children: [
           const OfflineBanner(),
-          Container(
-            color: SeuColors.white,
-            padding: const EdgeInsets.symmetric(vertical: 8),
+          // Bento-style day picker — segmented pill row floating above the
+          // cream background. Selected chip uses the SEU red gradient.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Row(
                 children: [
                   for (var i = 0; i < _days.length; i++)
                     Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: ChoiceChip(
-                        label: Text(_days[i]),
-                        selected: _selectedDay == i,
-                        onSelected: (_) => setState(() => _selectedDay = i),
-                        selectedColor: SeuColors.red,
-                        labelStyle: TextStyle(
-                          color: _selectedDay == i
-                              ? SeuColors.white
-                              : SeuColors.navy,
-                          fontWeight: FontWeight.w600,
+                      padding: const EdgeInsets.only(right: 8),
+                      child: GestureDetector(
+                        onTap: () => setState(() => _selectedDay = i),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          curve: SeuMotion.spring,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 10),
+                          decoration: BoxDecoration(
+                            gradient: _selectedDay == i
+                                ? const LinearGradient(
+                                    colors: [
+                                      SeuColors.red,
+                                      Color(0xFF8B1B22),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  )
+                                : null,
+                            color: _selectedDay == i ? null : SeuColors.white,
+                            borderRadius: BorderRadius.circular(999),
+                            boxShadow: SeuShadow.tile,
+                          ),
+                          child: Text(
+                            _days[i],
+                            style: TextStyle(
+                              color: _selectedDay == i
+                                  ? SeuColors.white
+                                  : SeuColors.navy,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12.5,
+                              letterSpacing: 0.4,
+                            ),
+                          ),
                         ),
                       ),
                     ),

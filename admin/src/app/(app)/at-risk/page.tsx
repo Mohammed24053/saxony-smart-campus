@@ -7,10 +7,9 @@ import { Send, X } from 'lucide-react';
 import { api, unwrapPaginated } from '@/lib/api';
 import {
   Button, Card, CardContent, CardDescription, CardHeader, CardTitle,
-  Input, Label, Table, Td, Textarea, Th, Tr,
+  FilterChip, Input, Label, Td, Textarea, Th, Toolbar, Tr,
 } from '@/components/ui';
 import { PageHeader, StatusBadge, TableSkeleton, useToast } from '@/components/seu';
-import { cn } from '@/lib/utils';
 
 type AtRiskRecord = {
   id: string;
@@ -77,41 +76,45 @@ export default function AtRiskPage() {
         description="Students approaching or exceeding absence thresholds."
       />
 
-      {/* Filter pills */}
-      <div className="mb-4 flex flex-wrap gap-2">
-        {FILTERS.map((f) => (
-          <button
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={cn(
-              'rounded-full px-3 py-1 text-xs font-medium transition-colors',
-              filter === f.key
-                ? 'bg-seu-navy text-white'
-                : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground',
-            )}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
+      {/* Toolbar — filter chips inline; counts taken from the unfiltered set. */}
+      <div className="overflow-hidden rounded-lg border border-border bg-card shadow-card">
+        <Toolbar>
+          {FILTERS.map((f) => (
+            <FilterChip
+              key={f.key}
+              active={filter === f.key}
+              onClick={() => setFilter(f.key)}
+              count={
+                f.key === 'all'
+                  ? q.data?.items.length
+                  : q.data?.items.filter((r) => r.warningLevel === f.key).length
+              }
+            >
+              {f.label}
+            </FilterChip>
+          ))}
+          <span className="ml-auto text-[11px] tabnum text-muted-foreground">
+            {rows.length.toLocaleString()} matching
+          </span>
+        </Toolbar>
 
-      {q.isLoading ? (
-        <TableSkeleton rows={6} cols={6} />
-      ) : (
-        <Table>
-          <thead>
-            <tr>
-              <Th>Student</Th>
-              <Th>Subject</Th>
-              <Th>Level</Th>
-              <Th>Absences</Th>
-              <Th>Trend</Th>
-              <Th>Triggered</Th>
-              <Th />
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r, i) => {
+        {q.isLoading ? (
+          <TableSkeleton rows={6} cols={7} />
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr>
+                <Th>Student</Th>
+                <Th>Subject</Th>
+                <Th>Level</Th>
+                <Th className="text-right">Absences</Th>
+                <Th>Trend</Th>
+                <Th>Triggered</Th>
+                <Th className="w-px" />
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => {
               // Synthesize a stable trend from the row id; replace with real
               // weekly absence series when /at-risk/:id/trend is implemented.
               let h = 0;
@@ -123,20 +126,20 @@ export default function AtRiskPage() {
                   <Td className="font-medium text-foreground">
                     {r.student?.user.name ?? r.studentId}
                   </Td>
-                  <Td className="text-muted-foreground">
+                  <Td className="text-[12.5px] text-muted-foreground">
                     {r.subject ? `${r.subject.code} — ${r.subject.name}` : r.subjectId}
                   </Td>
                   <Td>
                     <StatusBadge tone={r.warningLevel} />
                   </Td>
-                  <Td className="tabular-nums">{r.absenceCount}</Td>
+                  <Td className="tabnum text-right text-[12.5px]">{r.absenceCount}</Td>
                   <Td><Sparkline values={trend} /></Td>
-                  <Td className="text-muted-foreground tabular-nums">
+                  <Td className="text-[12.5px] text-muted-foreground tabnum">
                     {new Date(r.triggeredAt).toLocaleDateString()}
                   </Td>
-                  <Td>
-                    <Button size="sm" variant="outline" onClick={() => setTarget(r)}>
-                      <Send className="h-3.5 w-3.5" /> Send alert
+                  <Td className="text-right">
+                    <Button size="xs" variant="outline" onClick={() => setTarget(r)}>
+                      <Send className="h-3 w-3" /> Alert
                     </Button>
                   </Td>
                 </Tr>
@@ -144,13 +147,14 @@ export default function AtRiskPage() {
             })}
             {rows.length === 0 && (
               <tr>
-                <Td className="text-muted-foreground">No at-risk students.</Td>
+                <Td className="text-center text-muted-foreground">No at-risk students.</Td>
                 <Td /><Td /><Td /><Td /><Td /><Td />
               </tr>
             )}
-          </tbody>
-        </Table>
-      )}
+            </tbody>
+          </table>
+        )}
+      </div>
 
       {/* Slide-out alert composer */}
       <AnimatePresence>
@@ -215,48 +219,48 @@ function AlertComposer({
         role="dialog"
         aria-label="Send alert"
       >
-        <div className="flex items-center justify-between border-b border-border p-4">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div>
-            <h2 className="text-lg font-semibold">Send alert</h2>
-            <p className="text-xs text-muted-foreground">
+            <h2 className="text-[15px] font-semibold">Send alert</h2>
+            <p className="text-[11px] text-muted-foreground">
               To: {record.student?.user.name ?? record.studentId}
             </p>
           </div>
           <button onClick={onClose} aria-label="Close" className="text-muted-foreground hover:text-foreground">
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="flex-1 space-y-4 overflow-y-auto p-4">
-          <div className="space-y-2">
+        <div className="flex-1 space-y-3 overflow-y-auto p-4">
+          <div className="space-y-1.5">
             <Label htmlFor="alert-title">Title</Label>
             <Input id="alert-title" value={title} onChange={(e) => setTitle(e.target.value)} />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="alert-body">Body</Label>
             <Textarea
               id="alert-body"
-              rows={8}
+              rows={6}
               value={body}
               onChange={(e) => setBody(e.target.value)}
             />
           </div>
           <Card className="border-seu-gold/40 bg-seu-gold/10">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Preview</CardTitle>
-              <CardDescription className="text-xs">How the student will see it</CardDescription>
+            <CardHeader className="pb-1.5">
+              <CardTitle className="text-[12.5px]">Preview</CardTitle>
+              <CardDescription className="text-[11px]">How the student will see it</CardDescription>
             </CardHeader>
-            <CardContent className="text-sm">
+            <CardContent className="text-[12.5px]">
               <div className="font-medium">{title || '(no title)'}</div>
               <div className="mt-1 whitespace-pre-line text-muted-foreground">{body || '(no body)'}</div>
             </CardContent>
           </Card>
         </div>
-        <div className="flex justify-end gap-2 border-t border-border p-4">
-          <Button variant="outline" onClick={onClose} disabled={busy}>
+        <div className="flex justify-end gap-2 border-t border-border px-4 py-3">
+          <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>
             Cancel
           </Button>
-          <Button onClick={send} disabled={busy || !title.trim() || !body.trim()}>
-            <Send className="h-4 w-4" /> {busy ? 'Sending…' : 'Send'}
+          <Button size="sm" onClick={send} disabled={busy || !title.trim() || !body.trim()}>
+            <Send className="h-3.5 w-3.5" /> {busy ? 'Sending…' : 'Send'}
           </Button>
         </div>
       </motion.aside>

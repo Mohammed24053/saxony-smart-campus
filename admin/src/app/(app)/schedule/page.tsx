@@ -94,26 +94,26 @@ export default function SchedulePage() {
         description={`${slotCount} scheduled slot${slotCount === 1 ? '' : 's'}`}
         actions={
           <>
-            <Button variant="outline" onClick={() => setConfirmGenerate(true)} disabled={generateMu.isPending}>
-              {generateMu.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+            <Button variant="outline" size="sm" onClick={() => setConfirmGenerate(true)} disabled={generateMu.isPending}>
+              {generateMu.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
               Auto-generate
             </Button>
-            <Button onClick={() => setConfirmPublish(true)} disabled={publishMu.isPending || conflictCount > 0}>
-              <CheckCircle2 className="h-4 w-4" /> Publish
+            <Button size="sm" onClick={() => setConfirmPublish(true)} disabled={publishMu.isPending || conflictCount > 0}>
+              <CheckCircle2 className="h-3.5 w-3.5" /> Publish
             </Button>
           </>
         }
       />
 
       {/* Week navigation (week index is currently a noop — backend serves "current" only). */}
-      <Card className="mb-4">
-        <CardContent className="flex items-center justify-between py-3">
-          <Button variant="ghost" size="sm">
-            <ChevronLeft className="h-4 w-4" /> Previous week
+      <Card className="mb-3">
+        <CardContent className="flex items-center justify-between py-1.5">
+          <Button variant="ghost" size="xs">
+            <ChevronLeft className="h-3 w-3" /> Previous
           </Button>
-          <div className="text-sm font-medium">Current week</div>
-          <Button variant="ghost" size="sm">
-            Next week <ChevronRight className="h-4 w-4" />
+          <div className="text-[12.5px] font-medium">Current week</div>
+          <Button variant="ghost" size="xs">
+            Next <ChevronRight className="h-3 w-3" />
           </Button>
         </CardContent>
       </Card>
@@ -125,14 +125,14 @@ export default function SchedulePage() {
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="mb-4"
+            className="mb-3"
           >
             <Card className="border-seu-red/40 bg-seu-red/5">
-              <CardContent className="flex items-start gap-3 py-4">
-                <AlertCircle className="mt-0.5 h-5 w-5 text-seu-red" />
+              <CardContent className="flex items-start gap-2.5 py-3">
+                <AlertCircle className="mt-0.5 h-4 w-4 text-seu-red" />
                 <div>
-                  <div className="font-semibold text-seu-red">{conflictCount} conflicts detected</div>
-                  <ul className="mt-2 list-disc pl-5 text-sm text-seu-red/90">
+                  <div className="text-[12.5px] font-semibold text-seu-red">{conflictCount} conflicts detected</div>
+                  <ul className="mt-1.5 list-disc pl-4 text-[12px] text-seu-red/90">
                     {(conflictsQ.data ?? []).slice(0, 5).map((c, i) => (
                       <li key={i}>{c.reason}</li>
                     ))}
@@ -146,10 +146,10 @@ export default function SchedulePage() {
 
       {/* Published banner (when no conflicts) */}
       {slotCount > 0 && conflictCount === 0 && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-4">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-3">
           <Card className="border-status-success/40 bg-status-success/5">
-            <CardContent className="flex items-center gap-3 py-3 text-sm">
-              <CheckCircle2 className="h-4 w-4 text-status-success" />
+            <CardContent className="flex items-center gap-2 py-2 text-[12px]">
+              <CheckCircle2 className="h-3.5 w-3.5 text-status-success" />
               <span className="font-medium text-status-success">Schedule is conflict-free and ready to publish.</span>
             </CardContent>
           </Card>
@@ -157,12 +157,12 @@ export default function SchedulePage() {
       )}
 
       <Card className="overflow-auto p-0">
-        <table className="w-full text-xs">
-          <thead className="bg-muted/40">
+        <table className="w-full text-[11px]">
+          <thead className="sticky top-0 z-10 bg-muted/85 backdrop-blur">
             <tr>
-              <th className="border-r border-border px-3 py-2 text-left font-medium text-muted-foreground">Time</th>
+              <th className="sticky left-0 z-20 h-th border-b border-r border-border bg-muted/85 px-2 text-left font-medium uppercase tracking-wider text-[10px] text-muted-foreground">Time</th>
               {DAYS.map((d) => (
-                <th key={d} className="border-r border-border px-3 py-2 text-left font-medium text-muted-foreground">
+                <th key={d} className="h-th border-b border-r border-border px-2 text-left font-medium uppercase tracking-wider text-[10px] text-muted-foreground">
                   {d}
                 </th>
               ))}
@@ -173,7 +173,7 @@ export default function SchedulePage() {
               const t = `${String(h).padStart(2, '0')}:00`;
               return (
                 <tr key={h}>
-                  <td className="border-r border-t border-border bg-muted/20 px-3 py-3 align-top font-medium tabular-nums text-muted-foreground">
+                  <td className="sticky left-0 z-10 border-r border-t border-border bg-muted/30 px-2 py-1.5 align-top font-medium tabnum text-[11px] text-muted-foreground">
                     {t}
                   </td>
                   {DAYS.map((_, day) => {
@@ -182,7 +182,7 @@ export default function SchedulePage() {
                       <td
                         key={day}
                         className={cn(
-                          'min-w-[160px] border-r border-t border-border px-2 py-2 align-top',
+                          'min-w-[140px] border-r border-t border-border px-1.5 py-1 align-top',
                           cell.length === 0 && 'border-dashed bg-card',
                         )}
                       >
@@ -193,24 +193,24 @@ export default function SchedulePage() {
                             return (
                               <motion.div
                                 key={s.id}
-                                initial={{ opacity: 0, y: -4 }}
+                                initial={{ opacity: 0, y: -3 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0 }}
                                 transition={{ delay: idx * 0.04 }}
                                 className={cn(
-                                  'mb-1 rounded-md border-l-4 px-2 py-1.5 last:mb-0',
+                                  'mb-1 rounded border-l-2 px-1.5 py-1 last:mb-0',
                                   conflict && 'animate-pulse-ring',
                                 )}
                                 style={{ backgroundColor: c.bg, borderLeftColor: c.accent }}
                               >
-                                <div className="truncate font-medium text-foreground">
+                                <div className="truncate text-[11px] font-medium text-foreground">
                                   {s.subject?.name ?? s.subjectId}
                                 </div>
-                                <div className="truncate text-[10.5px] text-muted-foreground">
+                                <div className="truncate text-[10px] text-muted-foreground">
                                   {s.section?.name ?? '—'} · {s.room?.name ?? '—'}
                                 </div>
                                 {s.doctor?.user?.name && (
-                                  <div className="truncate text-[10.5px] text-muted-foreground/80">
+                                  <div className="truncate text-[10px] text-muted-foreground/80">
                                     {s.doctor.user.name}
                                   </div>
                                 )}

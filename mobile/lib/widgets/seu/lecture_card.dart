@@ -44,88 +44,92 @@ class _LectureCardState extends State<LectureCard>
     super.dispose();
   }
 
+  bool _pressed = false;
+
   @override
   Widget build(BuildContext context) {
-    final card = Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: SeuColors.white,
-        borderRadius: SeuRadius.lgR,
-        border: Border.all(
-          color: widget.isCurrent
-              ? SeuColors.success
-              : SeuColors.navy.withOpacity(0.06),
-          width: widget.isCurrent ? 1.6 : 1,
+    // Round 2 — bento tile aesthetic: borderless surface, soft halo shadow,
+    // radius bumped to match SeuRadius.lg (22px). Active session uses a
+    // pulsing green ring instead of a solid border.
+    final card = AnimatedScale(
+      scale: _pressed ? 0.98 : 1.0,
+      duration: const Duration(milliseconds: 140),
+      curve: SeuMotion.spring,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: SeuColors.white,
+          borderRadius: SeuRadius.lgR,
+          boxShadow: widget.isCurrent ? SeuShadow.tileLift : SeuShadow.tile,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: SeuColors.navy.withOpacity(widget.isCurrent ? 0.10 : 0.04),
-            blurRadius: widget.isCurrent ? 20 : 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 4,
-            height: 56,
-            decoration: BoxDecoration(
-              color: widget.accent,
-              borderRadius: BorderRadius.circular(4),
+        child: Row(
+          children: [
+            Container(
+              width: 4,
+              height: 56,
+              decoration: BoxDecoration(
+                color: widget.accent,
+                borderRadius: BorderRadius.circular(4),
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        widget.subject,
-                        style: Theme.of(context).textTheme.titleLarge,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (widget.isCurrent)
-                      _LiveDot()
-                    else
-                      Text(
-                        widget.time,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              fontFeatures: const [FontFeature.tabularFigures()],
-                            ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${widget.room} · ${widget.doctor}',
-                  style: Theme.of(context).textTheme.bodySmall,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (widget.isCurrent) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    'In progress · ${widget.time}',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: SeuColors.success,
-                          fontWeight: FontWeight.w600,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          widget.subject,
+                          style: Theme.of(context).textTheme.titleLarge,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
+                      ),
+                      if (widget.isCurrent)
+                        _LiveDot()
+                      else
+                        Text(
+                          widget.time,
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    fontFeatures: const [
+                                      FontFeature.tabularFigures(),
+                                    ],
+                                  ),
+                        ),
+                    ],
                   ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${widget.room} · ${widget.doctor}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (widget.isCurrent) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      'In progress · ${widget.time}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: SeuColors.success,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
 
     return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTapUp: (_) => setState(() => _pressed = false),
       onTap: widget.onTap,
       behavior: HitTestBehavior.opaque,
       child: widget.isCurrent

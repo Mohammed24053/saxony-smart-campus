@@ -3,17 +3,18 @@
 @tailwind utilities;
 
 /*
- * Saxony Egypt University — Smart Campus admin theme tokens.
+ * Saxony Egypt University — Smart Campus admin theme tokens (round 2: Data-Dense).
  *
- * Brand palette (extracted from official SEU logo):
- *   navy   #31313B  — sidebar, headlines
- *   red    #B1222A  — primary actions, CTAs, danger
- *   gold   #E4BD4F  — accents, badges, KPI top borders, warnings
- *   cream  #F3EDE4  — page background
- *   gray   #67666A  — subtext, muted borders
+ * Inspired by Linear / Vercel / Plane — operational dashboards meant to be
+ * left open for hours. Density is the primary design language:
+ *   - 8px spacing scale (strict)
+ *   - Header 56px, sidebar 240px (240/64 collapsed)
+ *   - Table rows 36px, sticky headers, inline filter chips
+ *   - Tighter type scale: body 13px, table 12px, headings -1 step
+ *   - Sharper radii (8/12) and quieter shadows
  *
- * Everything below is exposed as CSS custom properties so the same theme
- * powers Tailwind utilities, Recharts SVGs, and bespoke `style` overrides.
+ * Brand identity stays SEU (navy/red/gold/cream); the change is purely the
+ * spatial + typographic + motion vocabulary.
  */
 
 @layer base {
@@ -23,9 +24,9 @@
     --foreground: 240 7% 21%;          /* #31313B navy */
     --card: 0 0% 100%;                 /* #FFFFFF */
     --card-foreground: 240 7% 21%;
-    --muted: 32 25% 88%;               /* slightly darker cream for muted surfaces */
+    --muted: 32 25% 90%;               /* slightly darker cream for muted surfaces */
     --muted-foreground: 240 2% 41%;    /* #67666A gray */
-    --border: 240 7% 21% / 0.12;
+    --border: 240 7% 21% / 0.10;       /* hair-line, quieter than v1 */
     --ring: 357 67% 41%;               /* #B1222A red */
 
     /* Brand-driven semantic tokens */
@@ -43,16 +44,41 @@
     --sidebar-foreground: 32 33% 93%;  /* cream */
     --sidebar-accent: 43 71% 60%;      /* gold */
 
-    /* Radii (per design spec) */
-    --radius-lg: 16px;                 /* cards */
-    --radius-md: 10px;                 /* buttons, inputs */
+    /* Radii — round 2: tighter, sharper. */
+    --radius-lg: 12px;                 /* cards (was 16px) */
+    --radius-md: 8px;                  /* buttons, inputs (was 10px) */
     --radius-sm: 6px;
+
+    /* Density tokens (Linear-style). */
+    --density-row:    36px;            /* table row height */
+    --density-th:     32px;            /* table header height */
+    --density-input:  32px;            /* input + button compact */
+    --density-button: 36px;            /* default button */
+    --density-header: 56px;            /* top bar */
+    --density-padding-x: 16px;         /* card horizontal padding */
+    --density-padding-y: 12px;         /* card vertical padding */
+    --density-gap-tight: 8px;
+    --density-gap: 16px;
+  }
+
+  /* Compact density variant — even tighter. Toggle via `data-density="compact"` on <html>. */
+  :root[data-density='compact'] {
+    --density-row: 32px;
+    --density-th: 28px;
+    --density-input: 28px;
+    --density-button: 32px;
+    --density-padding-x: 12px;
+    --density-padding-y: 8px;
+    --density-gap: 12px;
   }
 
   * { @apply border-border; }
   html, body { height: 100%; }
   body {
     @apply bg-background text-foreground;
+    /* Denser body text: 13px is the Linear default */
+    font-size: 13px;
+    line-height: 1.5;
     font-feature-settings: 'cv11', 'ss01', 'ss03';
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
@@ -62,6 +88,9 @@
   :focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
+
+  /* Tabular numerals everywhere — prevents KPI flicker mid-count-up. */
+  .tabnum { font-variant-numeric: tabular-nums; }
 }
 
 /* Skeleton shimmer surface (token-driven so it adapts to dark mode later). */
@@ -85,6 +114,16 @@
     linear-gradient(135deg, rgba(255, 255, 255, 0.02) 25%, transparent 25%),
     linear-gradient(225deg, rgba(255, 255, 255, 0.02) 25%, transparent 25%);
   background-size: 100% 100%, 100% 100%, 24px 24px, 24px 24px;
+}
+
+/* Sticky table header surface — applied to <thead> on dense tables. */
+.dense-thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: hsl(var(--muted) / 0.9);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid hsl(var(--border));
 }
 
 /* Reduce-motion respect — disable non-essential animations. */

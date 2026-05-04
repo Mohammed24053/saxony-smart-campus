@@ -6,7 +6,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Download, Search, Upload, X } from 'lucide-react';
 import { api, unwrapPaginated } from '@/lib/api';
-import { Button, Card, Input, Table, Td, Th, Tr } from '@/components/ui';
+import { Button, Input, Td, Th, Toolbar, Tr } from '@/components/ui';
 import { FileUploadZone, PageHeader, TableSkeleton, useToast } from '@/components/seu';
 
 type Student = {
@@ -37,7 +37,7 @@ function Avatar({ name }: { name: string }) {
   const bg = palette[hash % palette.length];
   return (
     <span
-      className="inline-flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold text-white"
+      className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold text-white"
       style={{ backgroundColor: bg }}
       aria-hidden
     >
@@ -85,6 +85,7 @@ export default function StudentsPage() {
           <>
             <Button
               variant="outline"
+              size="sm"
               onClick={async () => {
                 const r = await api.get('/students/import/template', { responseType: 'blob' });
                 const url = URL.createObjectURL(new Blob([r.data]));
@@ -95,87 +96,95 @@ export default function StudentsPage() {
                 URL.revokeObjectURL(url);
               }}
             >
-              <Download className="h-4 w-4" /> Download template
+              <Download className="h-3.5 w-3.5" /> Template
             </Button>
-            <Button onClick={() => setImportOpen(true)}>
-              <Upload className="h-4 w-4" /> Import Excel
+            <Button size="sm" onClick={() => setImportOpen(true)}>
+              <Upload className="h-3.5 w-3.5" /> Import Excel
             </Button>
           </>
         }
       />
 
-      <Card className="mb-4 p-4">
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search by name, email, student ID…"
-            className="h-10 pl-9"
-            value={search}
-            onChange={(e) => {
-              setPage(1);
-              setSearch(e.target.value);
-            }}
-          />
-        </div>
-      </Card>
+      {/* Toolbar with inline search — sticks to the table top in dense mode. */}
+      <div className="overflow-hidden rounded-lg border border-border bg-card shadow-card">
+        <Toolbar>
+          <div className="relative max-w-xs flex-1">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search by name, email, ID…"
+              className="h-8 pl-8 text-[12.5px]"
+              value={search}
+              onChange={(e) => {
+                setPage(1);
+                setSearch(e.target.value);
+              }}
+            />
+          </div>
+          {q.data && (
+            <span className="ml-auto text-[11px] tabnum text-muted-foreground">
+              {q.data.total.toLocaleString()} total
+            </span>
+          )}
+        </Toolbar>
 
-      {q.isLoading ? (
-        <TableSkeleton rows={6} cols={5} />
-      ) : (
-        <Table>
-          <thead>
-            <tr>
-              <Th>Student</Th>
-              <Th>Student ID</Th>
-              <Th>Email</Th>
-              <Th>Faculty</Th>
-              <Th>Year</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {q.data?.items.map((s, i) => (
-              <Tr key={s.id} index={i}>
-                <Td>
-                  <div className="flex items-center gap-3">
-                    <Avatar name={s.name} />
-                    <div className="font-medium text-foreground">{s.name}</div>
-                  </div>
-                </Td>
-                <Td className="font-mono tabular-nums text-xs text-muted-foreground">{s.studentId}</Td>
-                <Td>{s.email ?? '—'}</Td>
-                <Td>{s.faculty ?? '—'}</Td>
-                <Td>{s.year ?? '—'}</Td>
-              </Tr>
-            ))}
-            {q.data && q.data.items.length === 0 && (
+        {q.isLoading ? (
+          <TableSkeleton rows={8} cols={5} />
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
               <tr>
-                <Td className="text-muted-foreground" >
-                  No students yet — import an Excel file to get started.
-                </Td>
-                <Td /><Td /><Td /><Td />
+                <Th>Student</Th>
+                <Th>Student ID</Th>
+                <Th>Email</Th>
+                <Th>Faculty</Th>
+                <Th>Year</Th>
               </tr>
-            )}
-          </tbody>
-        </Table>
-      )}
+            </thead>
+            <tbody>
+              {q.data?.items.map((s, i) => (
+                <Tr key={s.id} index={i}>
+                  <Td>
+                    <div className="flex items-center gap-2">
+                      <Avatar name={s.name} />
+                      <span className="font-medium text-foreground">{s.name}</span>
+                    </div>
+                  </Td>
+                  <Td className="font-mono tabnum text-[11.5px] text-muted-foreground">{s.studentId}</Td>
+                  <Td className="text-[12.5px]">{s.email ?? '—'}</Td>
+                  <Td className="text-[12.5px]">{s.faculty ?? '—'}</Td>
+                  <Td className="tabnum text-[12.5px]">{s.year ?? '—'}</Td>
+                </Tr>
+              ))}
+              {q.data && q.data.items.length === 0 && (
+                <tr>
+                  <Td className="text-center text-muted-foreground" >
+                    No students yet — import an Excel file to get started.
+                  </Td>
+                  <Td /><Td /><Td /><Td />
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
+      </div>
 
       {q.data && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="mt-4 flex items-center justify-between text-sm text-muted-foreground"
+          className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground"
         >
-          <span>{q.data.total} total</span>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
+          <span className="tabnum">{q.data.total} total</span>
+          <div className="flex items-center gap-1.5">
+            <Button variant="outline" size="xs" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
               Previous
             </Button>
-            <span className="px-2">
+            <span className="tabnum px-1.5">
               Page {q.data.page} / {Math.max(q.data.totalPages, 1)}
             </span>
             <Button
               variant="outline"
-              size="sm"
+              size="xs"
               disabled={page * q.data.pageSize >= q.data.total}
               onClick={() => setPage((p) => p + 1)}
             >
@@ -222,21 +231,21 @@ function ImportModal({
             </Dialog.Overlay>
             <Dialog.Content asChild>
               <motion.div
-                initial={{ opacity: 0, scale: 0.92 }}
+                initial={{ opacity: 0, scale: 0.94 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.96 }}
                 transition={{ type: 'spring', stiffness: 320, damping: 26 }}
-                className="fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-card p-6 shadow-modal"
+                className="fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-card p-5 shadow-modal"
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <Dialog.Title className="text-lg font-semibold">Import students from Excel</Dialog.Title>
-                    <Dialog.Description className="mt-1 text-sm text-muted-foreground">
+                    <Dialog.Title className="text-[15px] font-semibold">Import students from Excel</Dialog.Title>
+                    <Dialog.Description className="mt-0.5 text-[12px] text-muted-foreground">
                       Upload an .xlsx file matching the template. Errors will be reported per row.
                     </Dialog.Description>
                   </div>
                   <button onClick={onClose} aria-label="Close" className="text-muted-foreground hover:text-foreground">
-                    <X className="h-5 w-5" />
+                    <X className="h-4 w-4" />
                   </button>
                 </div>
                 <div className="mt-4">
@@ -249,8 +258,8 @@ function ImportModal({
                     busy={busy}
                   />
                 </div>
-                <div className="mt-4 flex justify-end">
-                  <Button variant="outline" onClick={onClose}>Done</Button>
+                <div className="mt-3 flex justify-end">
+                  <Button variant="outline" size="sm" onClick={onClose}>Done</Button>
                 </div>
               </motion.div>
             </Dialog.Content>

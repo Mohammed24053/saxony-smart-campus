@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { api, unwrapPaginated } from '@/lib/api';
-import { Table, Td, Th, Tr } from '@/components/ui';
+import { Td, Th, Toolbar, Tr } from '@/components/ui';
 import { PageHeader, TableSkeleton } from '@/components/seu';
 
 type Section = {
@@ -17,30 +17,39 @@ export default function SectionsPage() {
   return (
     <>
       <PageHeader title="Sections" description="Cohort divisions per year and faculty." />
-      {q.isLoading ? (
-        <TableSkeleton rows={6} cols={4} />
-      ) : (
-        <Table>
-          <thead>
-            <tr>
-              <Th>Name</Th><Th>Faculty</Th><Th>Year</Th><Th>Capacity</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {q.data?.items.map((s, i) => (
-              <Tr key={s.id} index={i}>
-                <Td className="font-medium">{s.name}</Td>
-                <Td className="text-muted-foreground">{s.faculty ?? '—'}</Td>
-                <Td className="tabular-nums">{s.year ?? '—'}</Td>
-                <Td className="tabular-nums">{s.capacity ?? '—'}</Td>
-              </Tr>
-            ))}
-            {q.data?.items.length === 0 && (
-              <tr><Td className="text-muted-foreground">No sections yet.</Td><Td /><Td /><Td /></tr>
-            )}
-          </tbody>
-        </Table>
-      )}
+      <div className="overflow-hidden rounded-lg border border-border bg-card shadow-card">
+        <Toolbar>
+          {q.data && (
+            <span className="ml-auto text-[11px] tabnum text-muted-foreground">
+              {q.data.total.toLocaleString()} total
+            </span>
+          )}
+        </Toolbar>
+        {q.isLoading ? (
+          <TableSkeleton rows={6} cols={4} />
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr>
+                <Th>Name</Th><Th>Faculty</Th><Th className="text-right">Year</Th><Th className="text-right">Capacity</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {q.data?.items.map((s, i) => (
+                <Tr key={s.id} index={i}>
+                  <Td className="font-medium">{s.name}</Td>
+                  <Td className="text-[12.5px] text-muted-foreground">{s.faculty ?? '—'}</Td>
+                  <Td className="tabnum text-right text-[12.5px]">{s.year ?? '—'}</Td>
+                  <Td className="tabnum text-right text-[12.5px]">{s.capacity ?? '—'}</Td>
+                </Tr>
+              ))}
+              {q.data?.items.length === 0 && (
+                <tr><Td className="text-center text-muted-foreground">No sections yet.</Td><Td /><Td /><Td /></tr>
+              )}
+            </tbody>
+          </table>
+        )}
+      </div>
     </>
   );
 }

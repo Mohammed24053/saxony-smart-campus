@@ -32,9 +32,9 @@ class SeuColors {
   static const danger = Color(0xFFB1222A);
   static const info = Color(0xFF1976D2);
 
-  static const navyOverlay8 = Color(0x14_31313B); // 8% over navy
-  static const navyOverlay12 = Color(0x1F_31313B); // 12% over navy
-  static const redTrack = Color(0x26_B1222A); // 15% red — progress track
+  static const navyOverlay8 = Color(0x1431313B); // 8% over navy
+  static const navyOverlay12 = Color(0x1F31313B); // 12% over navy
+  static const redTrack = Color(0x26B1222A); // 15% red — progress track
 }
 
 /// Animation tokens — durations + curves used across the entire app.
@@ -60,16 +60,55 @@ class SeuMotion {
 }
 
 /// Border-radius tokens.
+///
+/// Round 2 — Bento Box style. Cards step up to 22–24px to give the soft,
+/// pillow-y aesthetic Apple/Vercel use; buttons/inputs follow at 14px so they
+/// feel related but never compete with the dominant tile shape.
 class SeuRadius {
   SeuRadius._();
-  static const sm = 6.0;
-  static const md = 10.0; // buttons, inputs
-  static const lg = 16.0; // cards
-  static const xl = 20.0; // modals, pills
+  static const sm = 8.0;
+  static const md = 14.0; // buttons, inputs
+  static const lg = 22.0; // cards — bento tile
+  static const xl = 28.0; // modals, prominent feature tiles
   static final smR = BorderRadius.circular(sm);
   static final mdR = BorderRadius.circular(md);
   static final lgR = BorderRadius.circular(lg);
   static final xlR = BorderRadius.circular(xl);
+}
+
+/// Soft, layered shadows for the Bento aesthetic. Two stops: a near, blurred
+/// halo for ambient depth and a far, very-low-opacity drop for ground.
+class SeuShadow {
+  SeuShadow._();
+
+  static List<BoxShadow> tile = [
+    BoxShadow(
+      color: const Color(0x1431313B), // 8% navy
+      blurRadius: 24,
+      offset: const Offset(0, 8),
+      spreadRadius: -8,
+    ),
+    BoxShadow(
+      color: const Color(0x0A31313B), // 4% navy
+      blurRadius: 2,
+      offset: const Offset(0, 1),
+    ),
+  ];
+
+  /// Slightly heavier lift used on hero/feature tiles.
+  static List<BoxShadow> tileLift = [
+    BoxShadow(
+      color: const Color(0x1F31313B), // 12% navy
+      blurRadius: 32,
+      offset: const Offset(0, 12),
+      spreadRadius: -10,
+    ),
+    BoxShadow(
+      color: const Color(0x0A31313B),
+      blurRadius: 2,
+      offset: const Offset(0, 1),
+    ),
+  ];
 }
 
 /// Spacing scale — 4px increments.
@@ -157,11 +196,12 @@ class SeuTheme {
         color: SeuColors.white,
         elevation: 0,
         margin: EdgeInsets.zero,
+        // Round 2 — bento tiles drop the visible border in favour of a soft
+        // shadow halo. The card itself is borderless to keep the surface clean.
         shape: RoundedRectangleBorder(
           borderRadius: SeuRadius.lgR,
-          side: BorderSide(color: SeuColors.navy.withOpacity(0.06)),
         ),
-        shadowColor: SeuColors.navy.withOpacity(0.06),
+        shadowColor: Colors.transparent,
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(

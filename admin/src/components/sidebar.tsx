@@ -43,9 +43,9 @@ export function Sidebar() {
       transition={{ duration: 0.25, ease: 'easeInOut' }}
       className="relative flex h-screen shrink-0 flex-col bg-sidebar text-sidebar-foreground"
     >
-      {/* Logo / Title */}
-      <div className={cn('flex h-16 items-center gap-3 border-b border-white/10 px-4', collapsed && 'justify-center')}>
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-seu-red font-bold text-white shadow-md">
+      {/* Logo / Title — 56px to match the header. */}
+      <div className={cn('flex h-header items-center gap-2.5 border-b border-white/10 px-3', collapsed && 'justify-center')}>
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-seu-red font-bold text-[12px] text-white shadow-md">
           SE
         </div>
         <AnimatePresence initial={false}>
@@ -57,15 +57,15 @@ export function Sidebar() {
               transition={{ duration: 0.18 }}
               className="overflow-hidden"
             >
-              <div className="text-sm font-semibold leading-tight">Smart Campus</div>
-              <div className="text-[11px] leading-tight text-seu-gold">Saxony Egypt University</div>
+              <div className="text-[13px] font-semibold leading-tight">Smart Campus</div>
+              <div className="text-[10px] leading-tight text-seu-gold">Saxony Egypt University</div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-3">
+      {/* Nav (denser: 32px tall items, 12px text). */}
+      <nav className="flex-1 space-y-px overflow-y-auto px-2 py-2">
         {NAV.map(({ href, label, icon: Icon }) => {
           const active = href === '/dashboard' ? path === '/dashboard' : path?.startsWith(href);
           return (
@@ -73,10 +73,10 @@ export function Sidebar() {
               key={href}
               href={href}
               className={cn(
-                'group relative flex items-center gap-3 overflow-hidden rounded-md px-3 py-2 text-sm transition-colors',
+                'group relative flex h-8 items-center gap-2.5 overflow-hidden rounded-md px-2.5 text-[12.5px] transition-colors',
                 active
-                  ? 'bg-white/[0.06] text-white'
-                  : 'text-white/70 hover:bg-white/[0.04] hover:text-white',
+                  ? 'bg-white/[0.06] text-white font-medium'
+                  : 'text-white/65 hover:bg-white/[0.04] hover:text-white',
                 collapsed && 'justify-center px-0',
               )}
               aria-current={active ? 'page' : undefined}
@@ -84,13 +84,13 @@ export function Sidebar() {
               {active && (
                 <motion.span
                   layoutId="sidebar-active-bar"
-                  className="absolute left-0 top-1 bottom-1 w-1 rounded-r-md bg-seu-red"
+                  className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-sm bg-seu-red"
                   transition={{ type: 'spring', stiffness: 380, damping: 28 }}
                 />
               )}
               {/* Hover background slide */}
-              <span className="pointer-events-none absolute inset-0 -z-0 -translate-x-full bg-gradient-to-r from-white/0 via-white/[0.06] to-white/0 transition-transform duration-200 group-hover:translate-x-0" />
-              <Icon className={cn('h-4 w-4 shrink-0 relative', active ? 'text-seu-gold' : 'text-white/70 group-hover:text-white')} />
+              <span className="pointer-events-none absolute inset-0 -z-0 -translate-x-full bg-gradient-to-r from-white/0 via-white/[0.05] to-white/0 transition-transform duration-200 group-hover:translate-x-0" />
+              <Icon className={cn('h-3.5 w-3.5 shrink-0 relative', active ? 'text-seu-gold' : 'text-white/65 group-hover:text-white')} />
               <AnimatePresence initial={false}>
                 {!collapsed && (
                   <motion.span
@@ -112,7 +112,7 @@ export function Sidebar() {
       {/* Collapse toggle */}
       <button
         onClick={() => setCollapsed((c) => !c)}
-        className="m-3 flex items-center justify-center gap-2 rounded-md border border-white/10 px-3 py-1.5 text-xs text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white"
+        className="m-2 flex h-7 items-center justify-center gap-2 rounded-md border border-white/10 px-2.5 text-[11px] text-white/60 transition-colors hover:bg-white/[0.06] hover:text-white"
         aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
         <motion.span animate={{ rotate: collapsed ? 180 : 0 }} transition={{ duration: 0.2 }}>

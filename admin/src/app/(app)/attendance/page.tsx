@@ -59,15 +59,15 @@ export default function AttendanceLivePage() {
         description="Watch scans land in real time as students check in."
       />
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-3 lg:grid-cols-3">
         {/* Left column: session + counter */}
-        <div className="space-y-4 lg:col-span-1">
+        <div className="space-y-3 lg:col-span-1">
           <Card>
             <CardHeader>
               <CardTitle>Session</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="space-y-2">
+            <CardContent className="space-y-2.5">
+              <div className="space-y-1.5">
                 <Label htmlFor="session-id">Session ID</Label>
                 <Input
                   id="session-id"
@@ -77,24 +77,23 @@ export default function AttendanceLivePage() {
                   disabled={active}
                 />
               </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  className="flex-1"
-                  variant={active ? 'outline' : 'default'}
-                  disabled={!sessionId.trim()}
-                  onClick={() => {
-                    setActive((a) => !a);
-                    setEvents([]);
-                    setCount(0);
-                  }}
-                >
-                  {active ? 'Stop' : 'Watch session'}
-                </Button>
-              </div>
-              <div className="flex items-center gap-2 text-xs">
+              <Button
+                className="w-full"
+                size="sm"
+                variant={active ? 'outline' : 'default'}
+                disabled={!sessionId.trim()}
+                onClick={() => {
+                  setActive((a) => !a);
+                  setEvents([]);
+                  setCount(0);
+                }}
+              >
+                {active ? 'Stop watching' : 'Watch session'}
+              </Button>
+              <div className="flex items-center gap-1.5 text-[11px]">
                 <span
                   className={cn(
-                    'h-2.5 w-2.5 rounded-full',
+                    'h-2 w-2 rounded-full',
                     connected ? 'bg-status-success animate-live-dot' : 'bg-muted',
                   )}
                 />
@@ -105,15 +104,15 @@ export default function AttendanceLivePage() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-seu-red" /> Currently present
+              <CardTitle className="flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5 text-seu-red" /> Currently present
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-5xl font-semibold tracking-tight text-foreground">
+              <div className="text-[44px] font-semibold leading-none tracking-tight tabnum text-foreground">
                 <FlipCounter value={count} />
               </div>
-              <p className="mt-2 text-xs text-muted-foreground">
+              <p className="mt-1.5 text-[11px] text-muted-foreground">
                 Counts update instantly as scans are accepted.
               </p>
             </CardContent>
@@ -124,18 +123,18 @@ export default function AttendanceLivePage() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-4 w-4 text-seu-red" /> Live feed
+              <CardTitle className="flex items-center gap-1.5">
+                <Activity className="h-3.5 w-3.5 text-seu-red" /> Live feed
               </CardTitle>
-              <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Radio className="h-3.5 w-3.5" /> {events.length} scan{events.length === 1 ? '' : 's'}
+              <span className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground tabnum">
+                <Radio className="h-3 w-3" /> {events.length} scan{events.length === 1 ? '' : 's'}
               </span>
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <ul className="divide-y divide-border">
+            <ul className="divide-y divide-border/60">
               {events.length === 0 && (
-                <li className="p-6 text-center text-sm text-muted-foreground">
+                <li className="p-8 text-center text-[12.5px] text-muted-foreground">
                   Waiting for scans…
                 </li>
               )}
@@ -143,18 +142,18 @@ export default function AttendanceLivePage() {
                 {events.map((e, i) => (
                   <motion.li
                     key={`${e.studentId}-${e.scannedAt}-${i}`}
-                    initial={{ opacity: 0, x: 24, backgroundColor: 'rgba(46, 125, 50, 0.18)' }}
+                    initial={{ opacity: 0, x: 16, backgroundColor: 'rgba(46, 125, 50, 0.18)' }}
                     animate={{ opacity: 1, x: 0, backgroundColor: 'rgba(46, 125, 50, 0)' }}
-                    transition={{ duration: 0.4, ease: 'easeOut' }}
+                    transition={{ duration: 0.35, ease: 'easeOut' }}
                     layout
-                    className="flex items-center justify-between px-6 py-3"
+                    className="flex items-center justify-between px-4 py-2 hover:bg-muted/40"
                   >
                     <div>
-                      <div className="text-sm font-medium text-foreground">{e.studentName}</div>
-                      <div className="text-xs text-muted-foreground tabular-nums">{e.studentId}</div>
+                      <div className="text-[12.5px] font-medium text-foreground">{e.studentName}</div>
+                      <div className="text-[10.5px] text-muted-foreground tabnum">{e.studentId}</div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs text-muted-foreground tabular-nums">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10.5px] text-muted-foreground tabnum">
                         {new Date(e.scannedAt).toLocaleTimeString()}
                       </span>
                       <StatusBadge tone={statusTone(e.status)} />

@@ -69,7 +69,7 @@ function OtpInput({
             if (ch && i < 5) refs.current[i + 1]?.focus();
           }}
           className={cn(
-            'h-14 w-12 rounded-md border-2 bg-card text-center text-xl font-semibold tabular-nums',
+            'h-12 w-10 rounded-md border-2 bg-card text-center text-lg font-semibold tabnum',
             'border-border focus:border-seu-red focus:outline-none focus:ring-2 focus:ring-ring',
             'transition-colors',
           )}
@@ -134,14 +134,14 @@ export default function LoginPage() {
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
         className="relative z-10 w-full max-w-md"
       >
-        <Card className="p-8">
-          <div className="mb-6 flex items-center justify-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-seu-red text-xl font-bold text-white shadow-card">
+        <Card className="p-6">
+          <div className="mb-4 flex items-center justify-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-seu-red text-base font-bold text-white shadow-card">
               SE
             </div>
           </div>
-          <h1 className="text-center text-2xl font-semibold tracking-tight">Smart Campus Admin</h1>
-          <p className="mb-6 mt-1 text-center text-sm text-muted-foreground">Saxony Egypt University</p>
+          <h1 className="text-center text-[22px] font-semibold tracking-tight">Smart Campus Admin</h1>
+          <p className="mb-5 mt-1 text-center text-[12.5px] text-muted-foreground">Saxony Egypt University</p>
 
           <form onSubmit={onSubmit} className="space-y-4" noValidate>
             {!needs2fa ? (

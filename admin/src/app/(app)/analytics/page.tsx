@@ -13,9 +13,11 @@ type RoomUtil = { roomName: string; utilizationRate: number };
 type DoctorPerf = { doctorName: string; presentRate: number };
 
 const tooltipStyle: React.CSSProperties = {
-  borderRadius: 10,
-  border: '1px solid rgba(49,49,59,0.12)',
-  boxShadow: '0 2px 16px rgba(49,49,59,0.08)',
+  borderRadius: 8,
+  border: '1px solid rgba(49,49,59,0.10)',
+  boxShadow: '0 1px 2px rgba(49,49,59,0.04)',
+  fontSize: 11,
+  padding: '6px 8px',
 };
 
 export default function AnalyticsPage() {
@@ -32,7 +34,7 @@ export default function AnalyticsPage() {
     <>
       <PageHeader title="Analytics" description="Cross-cutting dashboards on rooms, doctors, and trends." />
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-3 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Room utilization</CardTitle>
@@ -42,15 +44,15 @@ export default function AnalyticsPage() {
             {rooms.isLoading ? (
               <CardSkeleton rows={3} />
             ) : (
-              <div className="h-[280px]">
+              <div className="h-[220px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={rooms.data ?? []} margin={{ top: 16, right: 16, left: 0, bottom: 0 }}>
-                    <CartesianGrid vertical={false} stroke={SEU.gray} strokeOpacity={0.15} strokeDasharray="3 3" />
-                    <XAxis dataKey="roomName" tickLine={false} axisLine={false} stroke={SEU.gray} fontSize={11} />
-                    <YAxis domain={[0, 100]} tickLine={false} axisLine={false} stroke={SEU.gray} fontSize={11}
-                      tickFormatter={(v) => `${v}%`} width={32} />
+                  <BarChart data={rooms.data ?? []} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                    <CartesianGrid vertical={false} stroke={SEU.gray} strokeOpacity={0.12} strokeDasharray="3 3" />
+                    <XAxis dataKey="roomName" tickLine={false} axisLine={false} stroke={SEU.gray} fontSize={10} />
+                    <YAxis domain={[0, 100]} tickLine={false} axisLine={false} stroke={SEU.gray} fontSize={10}
+                      tickFormatter={(v) => `${v}%`} width={28} />
                     <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v}%`, 'Utilization']} />
-                    <Bar dataKey="utilizationRate" radius={[6, 6, 0, 0]} animationDuration={800}>
+                    <Bar dataKey="utilizationRate" radius={[3, 3, 0, 0]} animationDuration={800} barSize={20}>
                       {(rooms.data ?? []).map((_, i) => (
                         <Cell key={i} fill={SEU.red} />
                       ))}
@@ -71,15 +73,15 @@ export default function AnalyticsPage() {
             {doctors.isLoading ? (
               <CardSkeleton rows={3} />
             ) : (
-              <div className="h-[280px]">
+              <div className="h-[220px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={doctors.data ?? []} margin={{ top: 16, right: 16, left: 0, bottom: 0 }}>
-                    <CartesianGrid vertical={false} stroke={SEU.gray} strokeOpacity={0.15} strokeDasharray="3 3" />
-                    <XAxis dataKey="doctorName" tickLine={false} axisLine={false} stroke={SEU.gray} fontSize={11} />
-                    <YAxis domain={[0, 100]} tickLine={false} axisLine={false} stroke={SEU.gray} fontSize={11}
-                      tickFormatter={(v) => `${v}%`} width={32} />
+                  <BarChart data={doctors.data ?? []} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                    <CartesianGrid vertical={false} stroke={SEU.gray} strokeOpacity={0.12} strokeDasharray="3 3" />
+                    <XAxis dataKey="doctorName" tickLine={false} axisLine={false} stroke={SEU.gray} fontSize={10} />
+                    <YAxis domain={[0, 100]} tickLine={false} axisLine={false} stroke={SEU.gray} fontSize={10}
+                      tickFormatter={(v) => `${v}%`} width={28} />
                     <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v}%`, 'Present']} />
-                    <Bar dataKey="presentRate" radius={[6, 6, 0, 0]} animationDuration={800}>
+                    <Bar dataKey="presentRate" radius={[3, 3, 0, 0]} animationDuration={800} barSize={20}>
                       {(doctors.data ?? []).map((_, i) => (
                         <Cell key={i} fill={SEU.gold} />
                       ))}

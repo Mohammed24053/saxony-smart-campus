@@ -21,10 +21,13 @@ class ProfileScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [SeuColors.navy, SeuColors.navy.withOpacity(0.85)],
+              gradient: const LinearGradient(
+                colors: [SeuColors.navy, Color(0xFF1F1F26)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              borderRadius: SeuRadius.lgR,
+              borderRadius: BorderRadius.circular(SeuRadius.xl),
+              boxShadow: SeuShadow.tileLift,
             ),
             child: Row(
               children: [
@@ -172,19 +175,20 @@ class _SettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: SeuColors.white,
-        borderRadius: SeuRadius.mdR,
-        border: Border.all(color: SeuColors.navy.withOpacity(0.06)),
+        borderRadius: SeuRadius.lgR,
+        boxShadow: SeuShadow.tile,
       ),
       child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
         leading: Container(
-          width: 36,
-          height: 36,
+          width: 38,
+          height: 38,
           decoration: BoxDecoration(
-            color: SeuColors.red.withOpacity(0.08),
-            shape: BoxShape.circle,
+            color: SeuColors.red.withOpacity(0.10),
+            borderRadius: BorderRadius.circular(10),
           ),
           alignment: Alignment.center,
           child: Icon(leading, color: SeuColors.red, size: 18),
@@ -198,7 +202,7 @@ class _SettingsTile extends StatelessWidget {
               ),
         trailing: const Icon(Icons.chevron_right, color: SeuColors.gray),
         onTap: onTap,
-        shape: RoundedRectangleBorder(borderRadius: SeuRadius.mdR),
+        shape: RoundedRectangleBorder(borderRadius: SeuRadius.lgR),
       ),
     );
   }

@@ -216,7 +216,7 @@ export default function DesignSystemPage() {
       </Section>
 
       {/* Animation reference */}
-      <Section title="Animation timings" hint="Reference for all motion specs in the brand book.">
+      <Section title="Animation timings" hint="Reference for all motion specs in the round-2 spec.">
         <Card>
           <CardContent className="pt-6">
             <div className="overflow-x-auto">
@@ -226,9 +226,11 @@ export default function DesignSystemPage() {
                 </thead>
                 <tbody>
                   {[
-                    ['fade-up', '300ms', 'cubic-bezier(0.22, 1, 0.36, 1)', 'Page enter, KPI cards'],
+                    ['fade-up', '220ms', 'cubic-bezier(0.22, 1, 0.36, 1)', 'Page enter (12px travel)'],
                     ['border-slide-in', '150ms', 'ease-out', 'Sidebar active border'],
-                    ['scale-in', '250ms', 'spring', 'Modal open'],
+                    ['count-up', '1200ms', 'cubic-bezier(0.16, 1, 0.3, 1)', 'KPI numeric tween'],
+                    ['row-stagger', '18ms / row', 'ease-out', 'Table row entrance'],
+                    ['scale-in', '200ms', 'spring(320, 26)', 'Modal open'],
                     ['shimmer', '1.5s loop', 'ease-in-out', 'Skeleton loaders'],
                     ['pulse-ring', '1.6s loop', 'cubic-bezier(0.4, 0, 0.6, 1)', 'Conflict pulse'],
                     ['live-dot', '1.4s loop', 'ease-in-out', 'Live indicator'],

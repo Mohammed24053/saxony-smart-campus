@@ -165,9 +165,21 @@ class _NotifCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isRead ? SeuColors.white : SeuColors.cream.withOpacity(0.8),
+          color: isRead ? SeuColors.white : null,
           borderRadius: SeuRadius.lgR,
-          border: Border.all(color: SeuColors.navy.withOpacity(0.06)),
+          boxShadow: SeuShadow.tile,
+          // Unread tiles get a faint gold-tinted backwash so they sit slightly
+          // forward in the visual hierarchy without breaking the bento system.
+          gradient: isRead
+              ? null
+              : LinearGradient(
+                  colors: [
+                    SeuColors.white,
+                    SeuColors.gold.withOpacity(0.05),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,

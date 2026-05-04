@@ -121,12 +121,12 @@ class _SubjectCardState extends State<_SubjectCard> {
     final fmt = DateFormat.yMMMd().add_Hm();
     final atRisk = widget.summary.percent < 0.75;
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: SeuColors.white,
         borderRadius: SeuRadius.lgR,
-        border: Border.all(color: SeuColors.navy.withOpacity(0.06)),
+        boxShadow: SeuShadow.tile,
       ),
       child: Column(
         children: [

@@ -57,15 +57,29 @@ export class NotificationsService {
       });
     }
 
-    // FCM push
-    const tokens = await this.prisma.user.findMany({
-      where: { id: { in: recipients }, fcmToken: { not: null } },
-      select: { fcmToken: true },
+    // FCM push: read all push tokens (multi-device) for the recipient users.
+    const tokens = await this.prisma.pushToken.findMany({
+      where: { userId: { in: recipients } },
+      select: { token: true },
     });
-    await this.fcm.sendToMany(
-      tokens.map((t) => t.fcmToken),
-      { title: notification.title, body: notification.body, data: { type: notification.type } },
-    );
+    if (tokens.length > 0) {
+      await this.fcm.sendToMany(
+        tokens.map((t) => t.token),
+        { title: notification.title, body: notification.body, data: { type: notification.type } },
+      );
+    } else {
+      // Backwards-compat fallback: legacy single-token field.
+      const legacy = await this.prisma.user.findMany({
+        where: { id: { in: recipients }, fcmToken: { not: null } },
+        select: { fcmToken: true },
+      });
+      if (legacy.length > 0) {
+        await this.fcm.sendToMany(
+          legacy.map((t) => t.fcmToken),
+          { title: notification.title, body: notification.body, data: { type: notification.type } },
+        );
+      }
+    }
 
     return notification;
   }
@@ -145,20 +159,36 @@ export class NotificationsService {
       }
       case 'user': {
         if (!args.targetId) return [];
-        return [args.targetId];
+        // Cross-tenant guard: only return the user if they belong to this university.
+        const u = await this.prisma.user.findFirst({
+          where: { id: args.targetId, universityId, deletedAt: null },
+          select: { id: true },
+        });
+        return u ? [u.id] : [];
       }
       case 'section': {
         if (!args.targetId) return [];
+        // Cross-tenant guard: ensure the section belongs to this university.
+        const sec = await this.prisma.section.findFirst({
+          where: { id: args.targetId, universityId, deletedAt: null },
+          select: { id: true },
+        });
+        if (!sec) return [];
         const students = await this.prisma.student.findMany({
-          where: { sectionId: args.targetId },
+          where: { sectionId: sec.id },
           select: { id: true },
         });
         return students.map((s) => s.id);
       }
       case 'subject': {
         if (!args.targetId) return [];
+        const subj = await this.prisma.subject.findFirst({
+          where: { id: args.targetId, universityId, deletedAt: null },
+          select: { id: true },
+        });
+        if (!subj) return [];
         const sections = await this.prisma.sectionSubject.findMany({
-          where: { subjectId: args.targetId },
+          where: { subjectId: subj.id },
           select: { sectionId: true },
         });
         const sids = sections.map((s) => s.sectionId);

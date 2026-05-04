@@ -23,6 +23,14 @@ import { AtRiskModule } from './modules/at-risk/at-risk.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { HealthModule } from './modules/health/health.module';
+import { AuditModule } from './modules/audit/audit.module';
+import { EmailModule } from './modules/email/email.module';
+import { MeModule } from './modules/me/me.module';
+import { UsersModule } from './modules/users/users.module';
+import { PasswordResetModule } from './modules/password-reset/password-reset.module';
+import { LeaveRequestsModule } from './modules/leave-requests/leave-requests.module';
+import { SettingsModule } from './modules/settings/settings.module';
+import { ReportsModule } from './modules/reports/reports.module';
 
 @Module({
   imports: [
@@ -34,8 +42,16 @@ import { HealthModule } from './modules/health/health.module';
     PrismaModule,
     RedisModule,
     StorageModule,
+    AuditModule,
+    EmailModule,
     NotificationsModule,
     AuthModule,
+    MeModule,
+    UsersModule,
+    PasswordResetModule,
+    LeaveRequestsModule,
+    SettingsModule,
+    ReportsModule,
     StudentsModule,
     DoctorsModule,
     RoomsModule,

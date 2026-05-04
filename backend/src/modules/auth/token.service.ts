@@ -44,15 +44,23 @@ export class TokenService {
   async issuePair(
     userId: string,
     claims: AccessTokenClaims,
-    meta: { userAgent?: string; ipAddress?: string } = {},
+    meta: { userAgent?: string; ipAddress?: string; familyId?: string } = {},
   ): Promise<TokenPair> {
     const cfg = this.config.getOrThrow<JwtConfig>('jwt');
     const accessToken = this.signAccessToken(claims);
     const refreshToken = crypto.randomBytes(48).toString('base64url');
     const tokenHash = await bcrypt.hash(refreshToken, 12);
     const expiresAt = new Date(Date.now() + this.parseExpiry(cfg.refreshExpires));
+    const familyId = meta.familyId ?? crypto.randomUUID();
     await this.prisma.refreshToken.create({
-      data: { userId, tokenHash, expiresAt, userAgent: meta.userAgent, ipAddress: meta.ipAddress },
+      data: {
+        userId,
+        tokenHash,
+        familyId,
+        expiresAt,
+        userAgent: meta.userAgent,
+        ipAddress: meta.ipAddress,
+      },
     });
     return {
       accessToken,
@@ -66,11 +74,12 @@ export class TokenService {
     refreshToken: string,
     meta: { userAgent?: string; ipAddress?: string } = {},
   ): Promise<TokenPair> {
+    // Match against ALL refresh tokens (active + revoked) so we can detect
+    // re-use of a previously rotated token (token theft signal).
     const candidates = await this.prisma.refreshToken.findMany({
-      where: { revokedAt: null, expiresAt: { gt: new Date() } },
       include: { user: true },
       orderBy: { createdAt: 'desc' },
-      take: 200,
+      take: 400,
     });
     let matched = null;
     for (const c of candidates) {
@@ -82,6 +91,17 @@ export class TokenService {
     }
     if (!matched || !matched.user.isActive) throw new AppException(ErrorCodes.TOKEN_INVALID);
 
+    // Token theft: a revoked-or-expired refresh token was presented.
+    // Revoke the entire family — every sibling refresh token issued in the
+    // same auth chain. The legitimate user will be forced to log in again.
+    if (matched.revokedAt || matched.expiresAt < new Date()) {
+      await this.prisma.refreshToken.updateMany({
+        where: { familyId: matched.familyId, revokedAt: null },
+        data: { revokedAt: new Date(), revokedReason: 'family_compromised' },
+      });
+      throw new AppException(ErrorCodes.TOKEN_INVALID);
+    }
+
     const claims: AccessTokenClaims = {
       sub: matched.user.id,
       role: matched.user.role,
@@ -89,7 +109,10 @@ export class TokenService {
       email: matched.user.email,
       twoFa: matched.user.role === 'admin', // refreshed pairs assume prior 2FA still satisfied
     };
-    const pair = await this.issuePair(matched.user.id, claims, meta);
+    const pair = await this.issuePair(matched.user.id, claims, {
+      ...meta,
+      familyId: matched.familyId,
+    });
     await this.prisma.refreshToken.update({
       where: { id: matched.id },
       data: { revokedAt: new Date(), replacedBy: pair.refreshToken.slice(0, 12) },

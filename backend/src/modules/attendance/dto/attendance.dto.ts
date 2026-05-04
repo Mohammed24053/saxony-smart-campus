@@ -18,6 +18,11 @@ export class StartSessionDto {
   @IsOptional()
   @IsNumber()
   intervalSeconds?: number;
+
+  @ApiPropertyOptional({ default: 15, description: 'Minutes after session start before scans are marked late.' })
+  @IsOptional()
+  @IsNumber()
+  lateAfterMinutes?: number;
 }
 
 export class ScanQrDto {

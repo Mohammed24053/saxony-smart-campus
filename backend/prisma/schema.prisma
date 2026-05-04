@@ -106,6 +106,8 @@ model User {
   student                Student?
   doctor                 Doctor?
   refreshTokens          RefreshToken[]
+  pushTokens             PushToken[]
+  passwordResetTokens    PasswordResetToken[]
   twoFactor              AdminTwoFactor?
   notificationsSent      Notification[]          @relation("NotificationSender")
   notificationRecipients NotificationRecipient[]
@@ -118,10 +120,12 @@ model RefreshToken {
   id          String    @id @default(uuid())
   userId      String
   tokenHash   String    @unique
+  familyId    String    @default(uuid())
   userAgent   String?
   ipAddress   String?
   expiresAt   DateTime
   revokedAt   DateTime?
+  revokedReason String?
   replacedBy  String?
   createdAt   DateTime  @default(now())
 
@@ -129,6 +133,83 @@ model RefreshToken {
 
   @@index([userId])
   @@index([expiresAt])
+  @@index([familyId])
+}
+
+model PushToken {
+  id         String   @id @default(uuid())
+  userId     String
+  token      String   @unique
+  platform   String   // "ios" | "android" | "web"
+  lastSeenAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  universityId String
+  actorId      String?
+  actorRole    String?
+  action       String   // "user.create" | "section.update" | "auth.login" | ...
+  entity       String?  // "User" | "Section" | ...
+  entityId     String?
+  before       Json?
+  after        Json?
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+
+  @@index([universityId])
+  @@index([actorId])
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
+
+enum LeaveRequestStatus {
+  pending
+  approved
+  rejected
+}
+
+model LeaveRequest {
+  id           String              @id @default(uuid())
+  universityId String
+  studentId    String
+  sessionId    String?
+  startsAt     DateTime
+  endsAt       DateTime
+  reason       String
+  attachmentKey String?
+  status       LeaveRequestStatus  @default(pending)
+  reviewerId   String?
+  reviewedAt   DateTime?
+  reviewerNote String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  student      Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([universityId])
+  @@index([studentId])
+  @@index([status])
 }
 
 model AdminTwoFactor {
@@ -158,6 +239,7 @@ model Student {
   section           Section?           @relation(fields: [sectionId], references: [id])
   attendanceRecords AttendanceRecord[]
   atRiskRecords     AtRiskRecord[]
+  leaveRequests     LeaveRequest[]
 
   @@index([sectionId])
 }
@@ -298,6 +380,9 @@ model AttendanceSession {
   endedAt        DateTime?
   status         SessionStatus @default(active)
   lateAfterMinutes Int         @default(15)
+  presentCount   Int           @default(0)
+  lateCount      Int           @default(0)
+  absentCount    Int           @default(0)
 
   scheduleSlot ScheduleSlot       @relation(fields: [scheduleSlotId], references: [id])
   doctor       Doctor             @relation(fields: [doctorId], references: [id])

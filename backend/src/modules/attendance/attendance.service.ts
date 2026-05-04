@@ -54,7 +54,14 @@ export class AttendanceService {
     if (existing) throw new AppException(ErrorCodes.SESSION_ALREADY_ACTIVE);
 
     const session = await this.prisma.attendanceSession.create({
-      data: { scheduleSlotId: slot.id, doctorId: doctor.userId, status: SessionStatus.active },
+      data: {
+        scheduleSlotId: slot.id,
+        doctorId: doctor.userId,
+        status: SessionStatus.active,
+        ...(typeof dto.lateAfterMinutes === 'number'
+          ? { lateAfterMinutes: Math.max(0, Math.min(120, Math.floor(dto.lateAfterMinutes))) }
+          : {}),
+      },
     });
     const { token, payload, expiresAt } = this.qr.buildPayload({
       sessionId: session.id,
@@ -106,11 +113,19 @@ export class AttendanceService {
     sessionId: string,
   ): Promise<AttendanceSession> {
     const session = await this.requireDoctorSession(universityId, doctor, sessionId, true);
+    await this.markAbsentees(session.id);
+    // Materialize final counts at close time so subsequent reads don't aggregate.
+    const finals = await this.computeCounts(session.id);
     const closed = await this.prisma.attendanceSession.update({
       where: { id: session.id },
-      data: { status: SessionStatus.closed, endedAt: new Date() },
+      data: {
+        status: SessionStatus.closed,
+        endedAt: new Date(),
+        presentCount: finals.present,
+        lateCount: finals.late,
+        absentCount: finals.absent,
+      },
     });
-    await this.markAbsentees(session.id);
     this.gateway.emitTimeout(session.id);
     try {
       await this.atRiskQueue.add(

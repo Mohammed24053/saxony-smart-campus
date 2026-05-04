@@ -27,6 +27,16 @@ export class RedisService implements OnModuleDestroy {
     return this.client.set(key, value);
   }
 
+  /**
+   * Atomic SET-if-not-exists with TTL. Returns 'OK' when the key was set
+   * (i.e. the caller "won" the race), or null when the key already existed.
+   * Implemented via a single Redis SET … NX EX command, which is atomic on
+   * the server and immune to the GET-then-SETEX race window.
+   */
+  async setNxEx(key: string, value: string, seconds: number): Promise<'OK' | null> {
+    return this.client.set(key, value, 'EX', seconds, 'NX');
+  }
+
   async del(...keys: string[]): Promise<number> {
     if (keys.length === 0) return 0;
     return this.client.del(...keys);

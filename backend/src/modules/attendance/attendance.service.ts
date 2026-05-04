@@ -195,11 +195,14 @@ export class AttendanceService {
       }
     }
 
-    // ── Step 5: idempotency / duplicate prevention
+    // ── Step 5: idempotency / duplicate prevention.
+    // Use an atomic SET … NX EX so two concurrent scans for the same
+    // (session, student) can't both pass the check. The previous GET-then-SETEX
+    // pair had a race window where two requests interleaved between the GET
+    // (both saw "no key") and the SETEX (both wrote, both passed).
     const idemKey = `attendance:${session.id}:${student.userId}`;
-    const dup = await this.redis.get(idemKey);
-    if (dup) throw new AppException(ErrorCodes.ALREADY_REGISTERED);
-    await this.redis.setex(idemKey, 86_400, '1');
+    const claimed = await this.redis.setNxEx(idemKey, '1', 86_400);
+    if (claimed !== 'OK') throw new AppException(ErrorCodes.ALREADY_REGISTERED);
 
     // Determine status (present vs late) based on lateAfterMinutes.
     const lateThresholdMs = session.lateAfterMinutes * 60_000;

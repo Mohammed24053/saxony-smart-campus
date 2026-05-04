@@ -67,8 +67,11 @@ class AuthNotifier extends StateNotifier<AuthUser?> {
 
   Future<void> logout() async {
     final api = ref.read(apiProvider);
+    final refreshToken = await _storage.read(key: 'refreshToken');
     try {
-      await api.dio.post('/auth/logout');
+      if (refreshToken != null) {
+        await api.dio.post('/auth/logout', data: {'refreshToken': refreshToken});
+      }
     } catch (_) {/* ignore */}
     await _storage.delete(key: 'accessToken');
     await _storage.delete(key: 'refreshToken');

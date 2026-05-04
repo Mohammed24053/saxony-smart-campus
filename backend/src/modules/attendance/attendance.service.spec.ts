@@ -16,6 +16,7 @@ function setup(opts: {
   session?: object | null;
   enrolledStudent?: object | null;
   redisGet?: string | null;
+  setNxEx?: 'OK' | null;
   rateLimitOk?: boolean;
 } = {}): any {
   const qr = {
@@ -41,7 +42,8 @@ function setup(opts: {
   const redis = {
     rateLimit: jest.fn().mockResolvedValue(opts.rateLimitOk ?? true),
     get: jest.fn().mockResolvedValue(opts.redisGet ?? null),
-    setex: jest.fn(),
+    setex: jest.fn().mockResolvedValue('OK'),
+    setNxEx: jest.fn().mockResolvedValue('setNxEx' in opts ? opts.setNxEx : 'OK'),
   } as never;
 
   const prisma = {
@@ -149,11 +151,28 @@ describe('AttendanceService.scan — 5-step verification', () => {
     const { svc } = setup({
       session: goodSession,
       enrolledStudent: { id: 'stu1', sectionId: 'sec1' },
-      redisGet: '1',
+      setNxEx: null, // SET NX EX returned null — another scan already claimed the key
     });
     await expect(
       svc.scan('uni1', studentPrincipal, { payload: '{}', gpsLat: 30.0, gpsLng: 31.0 }),
     ).rejects.toMatchObject({ code: ErrorCodes.ALREADY_REGISTERED });
+  });
+
+  it('Step 5: claims idempotency key atomically with SET NX EX (not GET+SETEX)', async () => {
+    const { svc, redis } = setup({
+      session: goodSession,
+      enrolledStudent: { id: 'stu1', sectionId: 'sec1' },
+    });
+    await svc.scan('uni1', studentPrincipal, {
+      payload: '{}', gpsLat: 30.0, gpsLng: 31.0,
+    });
+    expect((redis as any).setNxEx).toHaveBeenCalledWith(
+      'attendance:s1:stu1',
+      '1',
+      86_400,
+    );
+    // Should NOT use the racy GET → SETEX pair anymore.
+    expect((redis as any).setex).not.toHaveBeenCalled();
   });
 
   it('happy path: marks present and emits realtime event', async () => {

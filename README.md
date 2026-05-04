@@ -62,6 +62,15 @@ flutter pub get
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000/api/v1
 ```
 
+## Design system
+
+The visual identity, colour tokens, motion specs, and reusable component
+library are documented in [`docs/design-system.md`](docs/design-system.md).
+The accessibility audit is in
+[`docs/accessibility.md`](docs/accessibility.md). A live web showcase of
+every primitive is mounted at [`/design-system`](http://localhost:3001/design-system)
+in the admin dashboard.
+
 ## Default admin
 
 ```

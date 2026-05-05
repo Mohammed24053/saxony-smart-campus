@@ -202,7 +202,12 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <p className="mt-4 text-center text-xs text-muted-foreground">
+          <p className="mt-3 text-center text-xs">
+            <a href="/forgot-password" className="text-seu-red hover:underline">
+              Forgot password?
+            </a>
+          </p>
+          <p className="mt-3 text-center text-xs text-muted-foreground">
             By signing in you agree to the SEU acceptable-use policy.
           </p>
         </Card>

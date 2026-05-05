@@ -61,6 +61,30 @@
     --density-gap: 16px;
   }
 
+  /* Dark mode tokens — applied when <html class="dark"> */
+  :root.dark {
+    --background: 240 7% 12%;          /* deep navy */
+    --foreground: 0 0% 96%;
+    --card: 240 7% 16%;                /* slightly raised surface */
+    --card-foreground: 0 0% 96%;
+    --muted: 240 7% 19%;
+    --muted-foreground: 240 4% 70%;
+    --border: 0 0% 100% / 0.10;
+
+    --primary: 357 67% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 43 71% 60%;
+    --secondary-foreground: 240 7% 12%;
+    --accent: 43 71% 60%;
+    --accent-foreground: 240 7% 12%;
+    --destructive: 357 67% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --sidebar: 240 8% 9%;
+    --sidebar-foreground: 0 0% 96%;
+    --sidebar-accent: 43 71% 60%;
+  }
+
   /* Compact density variant — even tighter. Toggle via `data-density="compact"` on <html>. */
   :root[data-density='compact'] {
     --density-row: 32px;

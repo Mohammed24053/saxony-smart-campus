@@ -1,6 +1,7 @@
 export { AnimatedNumber } from './animated-number';
 export { AttendanceChart } from './attendance-chart';
 export { ConfirmModal } from './confirm-modal';
+export { EmptyState } from './empty-state';
 export { FileUploadZone } from './file-upload-zone';
 export { FlipCounter } from './flip-counter';
 export { KPICard, KPIRow } from './kpi-card';

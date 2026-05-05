@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/auth-store';
 import { Sidebar } from '@/components/sidebar';
 import { Header } from '@/components/header';
+import { CommandPalette } from '@/components/command-palette';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -19,6 +20,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (!user) return null;
   return (
     <div className="flex h-screen bg-background">
+      <CommandPalette />
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />

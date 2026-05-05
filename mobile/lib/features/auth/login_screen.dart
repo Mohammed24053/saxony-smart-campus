@@ -184,6 +184,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     icon: const Icon(Icons.fingerprint),
                     label: const Text('Sign in with biometrics'),
                   ),
+                  const SizedBox(height: 8),
+                  Center(
+                    child: TextButton(
+                      onPressed: () => context.go('/forgot-password'),
+                      child: const Text('Forgot password?'),
+                    ),
+                  ),
                 ],
               ],
             ),

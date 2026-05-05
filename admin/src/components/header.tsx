@@ -3,10 +3,12 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, LogOut, Search, User as UserIcon, Rows3, Rows4 } from 'lucide-react';
+import { Bell, LogOut, Search, User as UserIcon, Rows3, Rows4, Languages, Moon, Sun } from 'lucide-react';
 import { useAuth } from '@/lib/auth-store';
 import { Input } from '@/components/ui';
 import { cn } from '@/lib/utils';
+import { useT } from '@/i18n/i18n';
+import { useTheme } from '@/components/theme-provider';
 
 /**
  * Top header bar (round 2 — Linear-style 56px dense).
@@ -20,6 +22,9 @@ export function Header() {
   const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [compact, setCompact] = useState(false);
+  const { t, locale, setLocale } = useT();
+  const theme = useTheme((s) => s.theme);
+  const toggleTheme = useTheme((s) => s.toggleTheme);
 
   // Read persisted density preference once on mount.
   useEffect(() => {
@@ -54,7 +59,12 @@ export function Header() {
         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
           type="search"
-          placeholder="Search students, doctors, sections…"
+          placeholder={t('common.search')}
+          onFocus={() => {
+            const ev = new KeyboardEvent('keydown', { key: 'k', metaKey: true });
+            window.dispatchEvent(ev);
+          }}
+          readOnly
           className="h-8 pl-8 text-[13px]"
           aria-label="Global search"
         />
@@ -63,6 +73,23 @@ export function Header() {
         </kbd>
       </div>
       <div className="flex items-center gap-1">
+        <button
+          aria-label={locale === 'ar' ? 'Switch to English' : 'الترجمة العربية'}
+          onClick={() => setLocale(locale === 'ar' ? 'en' : 'ar')}
+          title={locale === 'ar' ? 'EN' : 'AR'}
+          className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <Languages className="h-3.5 w-3.5" />
+          <span className="font-mono">{locale.toUpperCase()}</span>
+        </button>
+        <button
+          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          onClick={toggleTheme}
+          title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </button>
         <button
           aria-label={compact ? 'Comfortable density' : 'Compact density'}
           onClick={toggleDensity}
@@ -112,12 +139,12 @@ export function Header() {
                 <button
                   onClick={() => {
                     setMenuOpen(false);
-                    router.push('/dashboard');
+                    router.push('/profile');
                   }}
                   className="flex w-full items-center gap-2 rounded-sm px-2.5 py-1.5 text-left text-xs hover:bg-muted"
                   role="menuitem"
                 >
-                  <UserIcon className="h-3.5 w-3.5" /> My account
+                  <UserIcon className="h-3.5 w-3.5" /> {t('nav.profile')}
                 </button>
                 <button
                   onClick={async () => {
@@ -128,7 +155,7 @@ export function Header() {
                   className="flex w-full items-center gap-2 rounded-sm px-2.5 py-1.5 text-left text-xs text-seu-red hover:bg-seu-red/10"
                   role="menuitem"
                 >
-                  <LogOut className="h-3.5 w-3.5" /> Logout
+                  <LogOut className="h-3.5 w-3.5" /> {t('auth.logout')}
                 </button>
               </motion.div>
             )}

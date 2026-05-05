@@ -5,11 +5,14 @@ import 'package:go_router/go_router.dart';
 
 import 'core/auth_state.dart';
 import 'core/locale_provider.dart';
+import 'core/notifications.dart';
 import 'features/attendance/history_screen.dart';
 import 'features/attendance/scan_screen.dart';
 import 'features/auth/login_screen.dart';
 import 'features/auth/splash_screen.dart';
 import 'features/doctor/active_session_screen.dart';
+import 'features/doctor/doctor_home_screen.dart';
+import 'features/auth/forgot_password_screen.dart';
 import 'features/notifications/notifications_screen.dart';
 import 'features/profile/profile_screen.dart';
 import 'features/schedule/schedule_screen.dart';
@@ -18,6 +21,7 @@ import 'theme/app_theme.dart';
 import 'widgets/seu/seu_bottom_nav.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const ProviderScope(child: SmartCampusApp()));
 }
 
@@ -25,18 +29,23 @@ final _routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
     redirect: (context, state) {
-      final loggedIn = ref.read(authProvider) != null;
+      final user = ref.read(authProvider);
+      final loggedIn = user != null;
       final loc = state.matchedLocation;
       if (loc == '/' || loc == '/splash') return null;
-      final loggingIn = loc == '/login';
-      if (!loggedIn && !loggingIn) return '/login';
-      if (loggedIn && loggingIn) return '/home';
+      final isPublic = loc == '/login' || loc == '/forgot-password';
+      if (!loggedIn && !isPublic) return '/login';
+      if (loggedIn && isPublic) {
+        return user.role == 'doctor' ? '/doctor/today' : '/home';
+      }
       return null;
     },
     refreshListenable: GoRouterRefreshStream(ref),
     routes: [
       GoRoute(path: '/', builder: (_, __) => const SplashScreen(next: '/login')),
       GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
+      GoRoute(path: '/forgot-password', builder: (_, __) => const ForgotPasswordScreen()),
+      GoRoute(path: '/doctor/today', builder: (_, __) => const DoctorHomeScreen()),
       ShellRoute(
         builder: (context, state, child) => HomeShell(child: child),
         routes: [

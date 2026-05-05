@@ -7,23 +7,31 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Users, GraduationCap, Building2, BookOpen,
   Layers, CalendarRange, ClipboardCheck, AlertTriangle, Bell, BarChart3,
-  ChevronLeft, Sparkles,
+  ChevronLeft, Sparkles, Settings, Shield, History, UserSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useT } from '@/i18n/i18n';
 
-const NAV = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/students', label: 'Students', icon: Users },
-  { href: '/doctors', label: 'Doctors', icon: GraduationCap },
-  { href: '/rooms', label: 'Rooms', icon: Building2 },
-  { href: '/subjects', label: 'Subjects', icon: BookOpen },
-  { href: '/sections', label: 'Sections', icon: Layers },
-  { href: '/schedule', label: 'Schedule', icon: CalendarRange },
-  { href: '/attendance', label: 'Attendance', icon: ClipboardCheck },
-  { href: '/at-risk', label: 'At-Risk', icon: AlertTriangle },
-  { href: '/notifications', label: 'Notifications', icon: Bell },
-  { href: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { href: '/design-system', label: 'Design System', icon: Sparkles },
+type NavItem = { href: string; key: string; icon: React.ComponentType<{ className?: string }>; group?: string };
+
+const NAV: NavItem[] = [
+  { href: '/dashboard', key: 'nav.dashboard', icon: LayoutDashboard },
+  { href: '/students', key: 'nav.students', icon: Users, group: 'data' },
+  { href: '/doctors', key: 'nav.doctors', icon: GraduationCap, group: 'data' },
+  { href: '/rooms', key: 'nav.rooms', icon: Building2, group: 'data' },
+  { href: '/subjects', key: 'nav.subjects', icon: BookOpen, group: 'data' },
+  { href: '/sections', key: 'nav.sections', icon: Layers, group: 'data' },
+  { href: '/schedule', key: 'nav.schedule', icon: CalendarRange, group: 'ops' },
+  { href: '/attendance', key: 'nav.attendance', icon: ClipboardCheck, group: 'ops' },
+  { href: '/at-risk', key: 'nav.atRisk', icon: AlertTriangle, group: 'ops' },
+  { href: '/notifications', key: 'nav.notifications', icon: Bell, group: 'ops' },
+  { href: '/notifications-history', key: 'notifications.history', icon: History, group: 'ops' },
+  { href: '/analytics', key: 'nav.analytics', icon: BarChart3, group: 'ops' },
+  { href: '/users', key: 'nav.users', icon: UserSquare, group: 'admin' },
+  { href: '/audit-log', key: 'nav.auditLog', icon: Shield, group: 'admin' },
+  { href: '/settings', key: 'nav.settings', icon: Settings, group: 'admin' },
+  { href: '/profile', key: 'nav.profile', icon: UserSquare, group: 'admin' },
+  { href: '/design-system', key: 'nav.designSystem', icon: Sparkles, group: 'admin' },
 ];
 
 /**
@@ -35,6 +43,7 @@ const NAV = [
 export function Sidebar() {
   const path = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const { t } = useT();
 
   return (
     <motion.aside
@@ -66,7 +75,8 @@ export function Sidebar() {
 
       {/* Nav (denser: 32px tall items, 12px text). */}
       <nav className="flex-1 space-y-px overflow-y-auto px-2 py-2">
-        {NAV.map(({ href, label, icon: Icon }) => {
+        {NAV.map(({ href, key, icon: Icon }) => {
+          const label = t(key);
           const active = href === '/dashboard' ? path === '/dashboard' : path?.startsWith(href);
           return (
             <Link

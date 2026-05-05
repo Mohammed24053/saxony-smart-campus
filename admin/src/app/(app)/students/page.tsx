@@ -4,10 +4,11 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Dialog from '@radix-ui/react-dialog';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Download, Search, Upload, X } from 'lucide-react';
+import { Download, FileSpreadsheet, Search, Upload, X } from 'lucide-react';
 import { api, unwrapPaginated } from '@/lib/api';
 import { Button, Input, Td, Th, Toolbar, Tr } from '@/components/ui';
 import { FileUploadZone, PageHeader, TableSkeleton, useToast } from '@/components/seu';
+import { exportRowsToCsv } from '@/lib/export-csv';
 
 type Student = {
   id: string;
@@ -83,6 +84,26 @@ export default function StudentsPage() {
         description="Manage enrolled students."
         actions={
           <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                exportRowsToCsv(
+                  `students-page-${page}.csv`,
+                  q.data?.items ?? [],
+                  [
+                    { header: 'Name', value: 'name' },
+                    { header: 'Student ID', value: 'studentId' },
+                    { header: 'Email', value: (r) => r.email ?? '' },
+                    { header: 'Faculty', value: (r) => r.faculty ?? '' },
+                    { header: 'Year', value: (r) => r.year ?? '' },
+                  ],
+                )
+              }
+              disabled={!q.data?.items.length}
+            >
+              <FileSpreadsheet className="h-3.5 w-3.5" /> CSV
+            </Button>
             <Button
               variant="outline"
               size="sm"

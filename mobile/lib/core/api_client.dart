@@ -30,9 +30,11 @@ class ApiClient {
         handler.next(options);
       },
       onError: (e, handler) async {
-        if (e.response?.statusCode == 401) {
+        final alreadyRetried = e.requestOptions.extra['__retried'] == true;
+        if (e.response?.statusCode == 401 && !alreadyRetried) {
           final ok = await client._tryRefresh();
           if (ok) {
+            e.requestOptions.extra['__retried'] = true;
             final retry = await dio.fetch(e.requestOptions);
             return handler.resolve(retry);
           }

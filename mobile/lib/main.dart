@@ -81,11 +81,27 @@ class GoRouterRefreshStream extends ChangeNotifier {
   }
 }
 
-class SmartCampusApp extends ConsumerWidget {
+class SmartCampusApp extends ConsumerStatefulWidget {
   const SmartCampusApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SmartCampusApp> createState() => _SmartCampusAppState();
+}
+
+class _SmartCampusAppState extends ConsumerState<SmartCampusApp> {
+  @override
+  void initState() {
+    super.initState();
+    // Best-effort FCM init. Soft-fails on web / when firebase_options.dart
+    // hasn't been generated yet, so the rest of the app still boots.
+    Future.microtask(() async {
+      final api = ref.read(apiProvider);
+      await PushNotificationService.instance.init(api: api);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final router = ref.watch(_routerProvider);
     final locale = ref.watch(localeProvider);
     return MaterialApp.router(

@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '@/lib/auth-store';
-import { Sidebar } from '@/components/sidebar';
-import { Header } from '@/components/header';
-import { CommandPalette } from '@/components/command-palette';
+import { useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/lib/auth-store";
+import { Sidebar } from "@/components/sidebar";
+import { Header } from "@/components/header";
+import { CommandPalette } from "@/components/command-palette";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -14,7 +14,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
 
   useEffect(() => {
-    if (!user) router.replace('/login');
+    if (!user) router.replace("/login");
   }, [user, router]);
 
   if (!user) return null;

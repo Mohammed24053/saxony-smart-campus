@@ -1,31 +1,46 @@
-'use client';
+"use client";
 
-import { useMemo, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
-import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Loader2, Wand2 } from 'lucide-react';
-import { api, unwrap } from '@/lib/api';
-import { Button, Card, CardContent } from '@/components/ui';
-import { ConfirmModal, PageHeader, useToast } from '@/components/seu';
-import { cn } from '@/lib/utils';
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  AlertCircle,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Wand2,
+} from "lucide-react";
+import { api, unwrap } from "@/lib/api";
+import { Button, Card, CardContent } from "@/components/ui";
+import { ConfirmModal, PageHeader, useToast } from "@/components/seu";
+import { cn } from "@/lib/utils";
 
 type Slot = {
-  id: string; subjectId: string; sectionId: string; doctorId: string; roomId: string;
-  dayOfWeek: number; startTime: string; endTime: string;
-  subject?: { name: string }; doctor?: { user?: { name: string } };
-  room?: { name: string }; section?: { name: string };
+  id: string;
+  subjectId: string;
+  sectionId: string;
+  doctorId: string;
+  roomId: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  subject?: { name: string };
+  doctor?: { user?: { name: string } };
+  room?: { name: string };
+  section?: { name: string };
 };
 
-const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 /** Six accent colours for slot pills, cycling deterministically by subject. */
 const SLOT_COLORS = [
-  { bg: 'rgba(177, 34, 42, 0.10)', accent: '#B1222A' },
-  { bg: 'rgba(228, 189, 79, 0.18)', accent: '#cda737' },
-  { bg: 'rgba(25, 118, 210, 0.10)', accent: '#1976D2' },
-  { bg: 'rgba(46, 125, 50, 0.10)', accent: '#2E7D32' },
-  { bg: 'rgba(49, 49, 59, 0.06)', accent: '#31313B' },
-  { bg: 'rgba(231, 138, 51, 0.12)', accent: '#cd7d2d' },
+  { bg: "rgba(177, 34, 42, 0.10)", accent: "#B1222A" },
+  { bg: "rgba(228, 189, 79, 0.18)", accent: "#cda737" },
+  { bg: "rgba(25, 118, 210, 0.10)", accent: "#1976D2" },
+  { bg: "rgba(46, 125, 50, 0.10)", accent: "#2E7D32" },
+  { bg: "rgba(49, 49, 59, 0.06)", accent: "#31313B" },
+  { bg: "rgba(231, 138, 51, 0.12)", accent: "#cd7d2d" },
 ];
 function colorForSubject(id: string) {
   let h = 0;
@@ -40,31 +55,42 @@ export default function SchedulePage() {
   const [confirmPublish, setConfirmPublish] = useState(false);
 
   const slotsQ = useQuery({
-    queryKey: ['schedule'],
-    queryFn: () => unwrap<Slot[]>(api.get('/schedule')),
+    queryKey: ["schedule"],
+    queryFn: () => unwrap<Slot[]>(api.get("/schedule")),
   });
   const conflictsQ = useQuery({
-    queryKey: ['schedule', 'conflicts'],
-    queryFn: () => unwrap<{ reason: string; subjectId: string }[]>(api.get('/schedule/conflicts')),
+    queryKey: ["schedule", "conflicts"],
+    queryFn: () =>
+      unwrap<{ reason: string; subjectId: string }[]>(
+        api.get("/schedule/conflicts"),
+      ),
   });
 
   const generateMu = useMutation({
-    mutationFn: () => api.post('/schedule/generate'),
+    mutationFn: () => api.post("/schedule/generate"),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['schedule'] });
-      push({ tone: 'success', title: 'Schedule generated', description: 'Conflict-free slots written to database.' });
+      qc.invalidateQueries({ queryKey: ["schedule"] });
+      push({
+        tone: "success",
+        title: "Schedule generated",
+        description: "Conflict-free slots written to database.",
+      });
       setConfirmGenerate(false);
     },
-    onError: () => push({ tone: 'error', title: 'Generation failed' }),
+    onError: () => push({ tone: "error", title: "Generation failed" }),
   });
   const publishMu = useMutation({
-    mutationFn: () => api.post('/schedule/publish'),
+    mutationFn: () => api.post("/schedule/publish"),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['schedule'] });
-      push({ tone: 'success', title: 'Schedule published', description: 'Visible to students and doctors.' });
+      qc.invalidateQueries({ queryKey: ["schedule"] });
+      push({
+        tone: "success",
+        title: "Schedule published",
+        description: "Visible to students and doctors.",
+      });
       setConfirmPublish(false);
     },
-    onError: () => push({ tone: 'error', title: 'Publish failed' }),
+    onError: () => push({ tone: "error", title: "Publish failed" }),
   });
 
   // Build a `Map<day-time, Slot[]>` so the grid can render in O(1).
@@ -91,14 +117,27 @@ export default function SchedulePage() {
     <>
       <PageHeader
         title="Schedule"
-        description={`${slotCount} scheduled slot${slotCount === 1 ? '' : 's'}`}
+        description={`${slotCount} scheduled slot${slotCount === 1 ? "" : "s"}`}
         actions={
           <>
-            <Button variant="outline" size="sm" onClick={() => setConfirmGenerate(true)} disabled={generateMu.isPending}>
-              {generateMu.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setConfirmGenerate(true)}
+              disabled={generateMu.isPending}
+            >
+              {generateMu.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Wand2 className="h-3.5 w-3.5" />
+              )}
               Auto-generate
             </Button>
-            <Button size="sm" onClick={() => setConfirmPublish(true)} disabled={publishMu.isPending || conflictCount > 0}>
+            <Button
+              size="sm"
+              onClick={() => setConfirmPublish(true)}
+              disabled={publishMu.isPending || conflictCount > 0}
+            >
               <CheckCircle2 className="h-3.5 w-3.5" /> Publish
             </Button>
           </>
@@ -111,7 +150,7 @@ export default function SchedulePage() {
           <Button variant="ghost" size="xs">
             <ChevronLeft className="h-3 w-3" /> Previous
           </Button>
-          <div className="text-[12.5px] font-medium">Current week</div>
+          <div className="text-[13.5px] font-medium">Current week</div>
           <Button variant="ghost" size="xs">
             Next <ChevronRight className="h-3 w-3" />
           </Button>
@@ -131,7 +170,9 @@ export default function SchedulePage() {
               <CardContent className="flex items-start gap-2.5 py-3">
                 <AlertCircle className="mt-0.5 h-4 w-4 text-seu-red" />
                 <div>
-                  <div className="text-[12.5px] font-semibold text-seu-red">{conflictCount} conflicts detected</div>
+                  <div className="text-[13.5px] font-semibold text-seu-red">
+                    {conflictCount} conflicts detected
+                  </div>
                   <ul className="mt-1.5 list-disc pl-4 text-[12px] text-seu-red/90">
                     {(conflictsQ.data ?? []).slice(0, 5).map((c, i) => (
                       <li key={i}>{c.reason}</li>
@@ -146,23 +187,34 @@ export default function SchedulePage() {
 
       {/* Published banner (when no conflicts) */}
       {slotCount > 0 && conflictCount === 0 && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-3">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="mb-3"
+        >
           <Card className="border-status-success/40 bg-status-success/5">
             <CardContent className="flex items-center gap-2 py-2 text-[12px]">
               <CheckCircle2 className="h-3.5 w-3.5 text-status-success" />
-              <span className="font-medium text-status-success">Schedule is conflict-free and ready to publish.</span>
+              <span className="font-medium text-status-success">
+                Schedule is conflict-free and ready to publish.
+              </span>
             </CardContent>
           </Card>
         </motion.div>
       )}
 
       <Card className="overflow-auto p-0">
-        <table className="w-full text-[11px]">
+        <table className="w-full text-[12px]">
           <thead className="sticky top-0 z-10 bg-muted/85 backdrop-blur">
             <tr>
-              <th className="sticky left-0 z-20 h-th border-b border-r border-border bg-muted/85 px-2 text-left font-medium uppercase tracking-wider text-[10px] text-muted-foreground">Time</th>
+              <th className="sticky left-0 z-20 h-th border-b border-r border-border bg-muted/85 px-2 text-left font-medium uppercase tracking-wider text-[11px] text-muted-foreground">
+                Time
+              </th>
               {DAYS.map((d) => (
-                <th key={d} className="h-th border-b border-r border-border px-2 text-left font-medium uppercase tracking-wider text-[10px] text-muted-foreground">
+                <th
+                  key={d}
+                  className="h-th border-b border-r border-border px-2 text-left font-medium uppercase tracking-wider text-[11px] text-muted-foreground"
+                >
                   {d}
                 </th>
               ))}
@@ -170,10 +222,10 @@ export default function SchedulePage() {
           </thead>
           <tbody>
             {hours.map((h) => {
-              const t = `${String(h).padStart(2, '0')}:00`;
+              const t = `${String(h).padStart(2, "0")}:00`;
               return (
                 <tr key={h}>
-                  <td className="sticky left-0 z-10 border-r border-t border-border bg-muted/30 px-2 py-1.5 align-top font-medium tabnum text-[11px] text-muted-foreground">
+                  <td className="sticky left-0 z-10 border-r border-t border-border bg-muted/30 px-2 py-1.5 align-top font-medium tabnum text-[12px] text-muted-foreground">
                     {t}
                   </td>
                   {DAYS.map((_, day) => {
@@ -182,8 +234,8 @@ export default function SchedulePage() {
                       <td
                         key={day}
                         className={cn(
-                          'min-w-[140px] border-r border-t border-border px-1.5 py-1 align-top',
-                          cell.length === 0 && 'border-dashed bg-card',
+                          "min-w-[140px] border-r border-t border-border px-1.5 py-1 align-top",
+                          cell.length === 0 && "border-dashed bg-card",
                         )}
                       >
                         <AnimatePresence>
@@ -198,19 +250,23 @@ export default function SchedulePage() {
                                 exit={{ opacity: 0 }}
                                 transition={{ delay: idx * 0.04 }}
                                 className={cn(
-                                  'mb-1 rounded border-l-2 px-1.5 py-1 last:mb-0',
-                                  conflict && 'animate-pulse-ring',
+                                  "mb-1 rounded border-l-2 px-1.5 py-1 last:mb-0",
+                                  conflict && "animate-pulse-ring",
                                 )}
-                                style={{ backgroundColor: c.bg, borderLeftColor: c.accent }}
+                                style={{
+                                  backgroundColor: c.bg,
+                                  borderLeftColor: c.accent,
+                                }}
                               >
-                                <div className="truncate text-[11px] font-medium text-foreground">
+                                <div className="truncate text-[12px] font-medium text-foreground">
                                   {s.subject?.name ?? s.subjectId}
                                 </div>
-                                <div className="truncate text-[10px] text-muted-foreground">
-                                  {s.section?.name ?? '—'} · {s.room?.name ?? '—'}
+                                <div className="truncate text-[11px] text-muted-foreground">
+                                  {s.section?.name ?? "—"} ·{" "}
+                                  {s.room?.name ?? "—"}
                                 </div>
                                 {s.doctor?.user?.name && (
-                                  <div className="truncate text-[10px] text-muted-foreground/80">
+                                  <div className="truncate text-[11px] text-muted-foreground/80">
                                     {s.doctor.user.name}
                                   </div>
                                 )}

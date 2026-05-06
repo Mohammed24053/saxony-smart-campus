@@ -125,7 +125,7 @@ export default function AtRiskPage() {
               {t(f.label)}
             </FilterChip>
           ))}
-          <span className="ml-auto text-[11px] tabnum text-muted-foreground">
+          <span className="ml-auto text-[12px] tabnum text-muted-foreground">
             {t("atRisk.matching", { count: rows.length.toLocaleString() })}
           </span>
         </Toolbar>
@@ -162,27 +162,21 @@ export default function AtRiskPage() {
                     <Td className="font-medium text-foreground">
                       {r.student?.user.name ?? r.studentId}
                     </Td>
-                    <Td className="text-[12.5px] text-muted-foreground">
+                    <Td className="text-[13.5px] text-muted-foreground">
                       {r.subject
                         ? `${r.subject.code} — ${r.subject.name}`
                         : r.subjectId}
                     </Td>
                     <Td>
-                      <StatusBadge tone={r.warningLevel}>
-                        {r.warningLevel === "warning_1"
-                          ? t("atRisk.warning1")
-                          : r.warningLevel === "warning_2"
-                            ? t("atRisk.warning2")
-                            : t("atRisk.deprivation")}
-                      </StatusBadge>
+                      <StatusBadge tone={r.warningLevel} />
                     </Td>
-                    <Td className="tabnum text-right text-[12.5px]">
+                    <Td className="tabnum text-right text-[13.5px]">
                       {r.absenceCount}
                     </Td>
                     <Td>
                       <Sparkline values={trend} />
                     </Td>
-                    <Td className="text-[12.5px] text-muted-foreground tabnum">
+                    <Td className="text-[13.5px] text-muted-foreground tabnum">
                       {new Date(r.triggeredAt).toLocaleDateString()}
                     </Td>
                     <Td className="text-right">
@@ -305,7 +299,7 @@ function AlertComposer({
             <h2 className="text-[15px] font-semibold">
               {t("atRisk.sendAlert")}
             </h2>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-[12px] text-muted-foreground">
               {t("atRisk.composer.to", {
                 name: record.student?.user.name ?? record.studentId,
               })}
@@ -341,14 +335,14 @@ function AlertComposer({
           </div>
           <Card className="border-seu-gold/40 bg-seu-gold/10">
             <CardHeader className="pb-1.5">
-              <CardTitle className="text-[12.5px]">
+              <CardTitle className="text-[13.5px]">
                 {t("atRisk.composer.preview")}
               </CardTitle>
-              <CardDescription className="text-[11px]">
+              <CardDescription className="text-[12px]">
                 {t("atRisk.composer.previewSub")}
               </CardDescription>
             </CardHeader>
-            <CardContent className="text-[12.5px]">
+            <CardContent className="text-[13.5px]">
               <div className="font-medium">
                 {title || t("atRisk.composer.noTitle")}
               </div>

@@ -13,31 +13,34 @@ export interface CsvColumn<T> {
 
 function cell(v: unknown): string {
   if (v === null || v === undefined) return '""';
-  const s = typeof v === 'string' ? v : String(v);
+  const s = typeof v === "string" ? v : String(v);
   return `"${s.replace(/"/g, '""')}"`;
 }
 
 export function rowsToCsv<T>(rows: T[], columns: CsvColumn<T>[]): string {
-  const header = columns.map((c) => cell(c.header)).join(',');
+  const header = columns.map((c) => cell(c.header)).join(",");
   const body = rows
     .map((row) =>
       columns
         .map((c) => {
-          const raw = typeof c.value === 'function' ? c.value(row) : (row[c.value] as unknown);
+          const raw =
+            typeof c.value === "function"
+              ? c.value(row)
+              : (row[c.value] as unknown);
           return cell(raw);
         })
-        .join(','),
+        .join(","),
     )
-    .join('\n');
+    .join("\n");
   return `${header}\n${body}`;
 }
 
 export function downloadCsv(filename: string, csv: string) {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
   // BOM so Excel recognizes UTF-8 and Arabic renders correctly.
-  const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' });
+  const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  const a = document.createElement("a");
   a.href = url;
   a.download = filename;
   document.body.appendChild(a);
@@ -48,6 +51,10 @@ export function downloadCsv(filename: string, csv: string) {
   }, 0);
 }
 
-export function exportRowsToCsv<T>(filename: string, rows: T[], columns: CsvColumn<T>[]) {
+export function exportRowsToCsv<T>(
+  filename: string,
+  rows: T[],
+  columns: CsvColumn<T>[],
+) {
   downloadCsv(filename, rowsToCsv(rows, columns));
 }

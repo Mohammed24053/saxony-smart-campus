@@ -44,7 +44,11 @@
     "thisWeek": "This week",
     "thisMonth": "This month",
     "title": "Title",
-    "description": "Description"
+    "description": "Description",
+    "statusPresent": "Present",
+    "statusLate": "Late",
+    "statusAbsent": "Absent",
+    "statusInfo": "Info"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -168,13 +172,24 @@
     "conflict": "Conflict"
   },
   "attendance": {
-    "title": "Attendance Live",
-    "subtitle": "Real-time session monitoring",
+    "title": "Attendance — Live",
+    "subtitle": "Watch scans land in real time as students check in.",
     "active": "Currently active",
     "present": "Currently present",
     "late": "Late",
     "absent": "Absent",
-    "waiting": "Waiting for scans…"
+    "waiting": "Waiting for scans…",
+    "session": "Session",
+    "sessionId": "Session ID",
+    "sessionIdPlaceholder": "paste session id…",
+    "watchSession": "Watch session",
+    "stopWatching": "Stop watching",
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "countsHint": "Counts update instantly as scans are accepted.",
+    "liveFeed": "Live feed",
+    "scans": "{count} scans",
+    "scan": "{count} scan"
   },
   "atRisk": {
     "title": "At-Risk Students",

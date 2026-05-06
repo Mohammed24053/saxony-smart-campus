@@ -44,7 +44,11 @@
     "thisWeek": "هذا الأسبوع",
     "thisMonth": "هذا الشهر",
     "title": "العنوان",
-    "description": "الوصف"
+    "description": "الوصف",
+    "statusPresent": "حاضر",
+    "statusLate": "متأخر",
+    "statusAbsent": "غائب",
+    "statusInfo": "معلومة"
   },
   "nav": {
     "dashboard": "اللوحة الرئيسية",
@@ -168,13 +172,24 @@
     "conflict": "تعارض"
   },
   "attendance": {
-    "title": "الحضور المباشر",
-    "subtitle": "متابعة الجلسات لحظياً",
+    "title": "الحضور — مباشر",
+    "subtitle": "تابع عمليات المسح لحظة دخول الطلاب.",
     "active": "نشطة الآن",
     "present": "الحاضرون الآن",
     "late": "متأخر",
     "absent": "غائب",
-    "waiting": "في انتظار المسح…"
+    "waiting": "في انتظار المسح…",
+    "session": "الجلسة",
+    "sessionId": "معرف الجلسة",
+    "sessionIdPlaceholder": "ألصق معرف الجلسة…",
+    "watchSession": "تابع الجلسة",
+    "stopWatching": "إيقاف المتابعة",
+    "connected": "متصل",
+    "disconnected": "غير متصل",
+    "countsHint": "تتحدّث الأعداد فورًا عند قبول المسحات.",
+    "liveFeed": "التغذية المباشرة",
+    "scans": "{count} عمليات مسح",
+    "scan": "{count} عملية مسح"
   },
   "atRisk": {
     "title": "الطلاب المعرضون للحرمان",

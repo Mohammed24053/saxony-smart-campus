@@ -1,10 +1,16 @@
-'use client';
+"use client";
 
-import { useMemo } from 'react';
+import { useMemo } from "react";
 import {
-  Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
-} from 'recharts';
-import { SEU } from '@/lib/seu-theme';
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { SEU } from "@/lib/seu-theme";
 
 export interface AttendanceChartProps {
   /** Sorted [{ date: 'YYYY-MM-DD', rate: 0–100 }, ...]. */
@@ -19,22 +25,36 @@ export interface AttendanceChartProps {
  */
 export function AttendanceChart({ data, height = 220 }: AttendanceChartProps) {
   const formatted = useMemo(
-    () => data.map((d) => ({ ...d, date: d.date?.slice(5) ?? '' })),
+    () => data.map((d) => ({ ...d, date: d.date?.slice(5) ?? "" })),
     [data],
   );
 
   return (
     <div style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={formatted} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+        <AreaChart
+          data={formatted}
+          margin={{ top: 4, right: 8, left: 0, bottom: 0 }}
+        >
           <defs>
             <linearGradient id="seu-rate" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={SEU.red} stopOpacity={0.30} />
+              <stop offset="0%" stopColor={SEU.red} stopOpacity={0.3} />
               <stop offset="100%" stopColor={SEU.red} stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid vertical={false} stroke={SEU.gray} strokeOpacity={0.12} strokeDasharray="2 4" />
-          <XAxis dataKey="date" tickLine={false} axisLine={false} stroke={SEU.gray} fontSize={10} />
+          <CartesianGrid
+            vertical={false}
+            stroke={SEU.gray}
+            strokeOpacity={0.12}
+            strokeDasharray="2 4"
+          />
+          <XAxis
+            dataKey="date"
+            tickLine={false}
+            axisLine={false}
+            stroke={SEU.gray}
+            fontSize={10}
+          />
           <YAxis
             domain={[0, 100]}
             tickLine={false}
@@ -47,11 +67,11 @@ export function AttendanceChart({ data, height = 220 }: AttendanceChartProps) {
           <Tooltip
             contentStyle={{
               borderRadius: 8,
-              border: '1px solid rgba(49,49,59,0.10)',
+              border: "1px solid rgba(49,49,59,0.10)",
               fontSize: 12,
-              boxShadow: '0 4px 16px rgba(49,49,59,0.10)',
+              boxShadow: "0 4px 16px rgba(49,49,59,0.10)",
             }}
-            formatter={(v: number) => [`${v}%`, 'Rate']}
+            formatter={(v: number) => [`${v}%`, "Rate"]}
             labelStyle={{ color: SEU.navy, fontWeight: 600, fontSize: 11 }}
           />
           <Area

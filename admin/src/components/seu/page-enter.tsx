@@ -1,12 +1,18 @@
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
+import { motion } from "framer-motion";
 
 /**
  * Wraps each page with the standard fade-up enter animation.
  * Round 2: faster (220ms) and smaller travel (12px → 0).
  */
-export function PageEnter({ children, className }: { children: React.ReactNode; className?: string }) {
+export function PageEnter({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -41,12 +47,18 @@ export function PageHeader({
   return (
     <div className="mb-4 flex flex-col items-start justify-between gap-2 border-b border-border pb-3 sm:flex-row sm:items-center">
       <div>
-        <h1 className="text-[18px] font-semibold leading-tight tracking-tight text-foreground">{title}</h1>
+        <h1 className="text-[18px] font-semibold leading-tight tracking-tight text-foreground">
+          {title}
+        </h1>
         {description && (
-          <p className="mt-0.5 text-[12px] text-muted-foreground">{description}</p>
+          <p className="mt-0.5 text-[12px] text-muted-foreground">
+            {description}
+          </p>
         )}
       </div>
-      {right && <div className="flex flex-wrap items-center gap-1.5">{right}</div>}
+      {right && (
+        <div className="flex flex-wrap items-center gap-1.5">{right}</div>
+      )}
     </div>
   );
 }

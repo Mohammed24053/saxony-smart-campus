@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { motion } from 'framer-motion';
-import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { AnimatedNumber } from './animated-number';
+import * as React from "react";
+import { motion } from "framer-motion";
+import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { AnimatedNumber } from "./animated-number";
 
 /**
  * KPI card — Round 2 (Linear-style dense).
@@ -40,7 +40,7 @@ export interface KPICardProps {
 
 const itemVariants = {
   hidden: { opacity: 0, y: 8 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
 };
 
 export function KPICard({
@@ -61,13 +61,13 @@ export function KPICard({
       whileHover={{ y: -1 }}
       transition={{ duration: 0.18 }}
       className={cn(
-        'relative overflow-hidden rounded-lg border border-border bg-card p-3.5 shadow-card',
-        'hover:shadow-card-lift hover:border-seu-navy/15',
+        "relative overflow-hidden rounded-lg border border-border bg-card p-3.5 shadow-card",
+        "hover:shadow-card-lift hover:border-seu-navy/15",
         className,
       )}
     >
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 text-[10.5px] font-medium uppercase tracking-wider text-muted-foreground">
+        <div className="flex items-center gap-1.5 text-[11.5px] font-medium uppercase tracking-wider text-muted-foreground">
           {Icon && <Icon className="h-3 w-3 text-muted-foreground" />}
           <span className="truncate">{label}</span>
         </div>
@@ -77,7 +77,7 @@ export function KPICard({
             <span className="relative inline-flex h-2 w-2 rounded-full bg-status-success" />
           </span>
         )}
-        {danger && typeof value === 'number' && value > 0 && (
+        {danger && typeof value === "number" && value > 0 && (
           <span className="rounded bg-seu-red/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-seu-red ring-1 ring-seu-red/20">
             ALERT
           </span>
@@ -91,13 +91,13 @@ export function KPICard({
             <AnimatedNumber value={value} format={format} />
           )}
         </span>
-        {typeof trend === 'number' && (
+        {typeof trend === "number" && (
           <span
             className={cn(
-              'inline-flex items-center gap-0.5 text-[11px] font-medium tabnum',
-              trend > 0 && 'text-status-success',
-              trend < 0 && 'text-seu-red',
-              trend === 0 && 'text-muted-foreground',
+              "inline-flex items-center gap-0.5 text-[12px] font-medium tabnum",
+              trend > 0 && "text-status-success",
+              trend < 0 && "text-seu-red",
+              trend === 0 && "text-muted-foreground",
             )}
           >
             {trend > 0 ? (
@@ -112,7 +112,7 @@ export function KPICard({
         )}
       </div>
       {(hint || spark) && (
-        <div className="mt-1.5 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+        <div className="mt-1.5 flex items-center justify-between gap-2 text-[12px] text-muted-foreground">
           {hint && <span className="truncate">{hint}</span>}
           {spark && spark.length > 1 && <Sparkline points={spark} />}
         </div>
@@ -133,9 +133,9 @@ function Sparkline({ points }: { points: number[] }) {
     .map((p, i) => {
       const x = i * step;
       const y = h - ((p - min) / range) * h;
-      return `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
+      return `${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
     })
-    .join(' ');
+    .join(" ");
 
   return (
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="shrink-0">
@@ -148,20 +148,29 @@ function Sparkline({ points }: { points: number[] }) {
         strokeLinejoin="round"
         initial={{ pathLength: 0 }}
         animate={{ pathLength: 1 }}
-        transition={{ duration: 0.8, ease: 'easeOut' }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
       />
     </svg>
   );
 }
 
 /** Container that staggers KPICard children (50ms delay each). */
-export function KPIRow({ children, className }: { children: React.ReactNode; className?: string }) {
+export function KPIRow({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
     <motion.div
       initial="hidden"
       animate="show"
       variants={{ show: { transition: { staggerChildren: 0.05 } } }}
-      className={cn('grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4', className)}
+      className={cn(
+        "grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4",
+        className,
+      )}
     >
       {children}
     </motion.div>

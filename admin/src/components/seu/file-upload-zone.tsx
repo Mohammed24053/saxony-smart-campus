@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useCallback, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, FileSpreadsheet, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui';
+import { useCallback, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Upload, FileSpreadsheet, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui";
 
 export interface FileUploadZoneProps {
   /** Accept attribute (e.g. ".xlsx,.xls"). */
@@ -19,7 +19,7 @@ export interface FileUploadZoneProps {
 }
 
 export function FileUploadZone({
-  accept = '.xlsx,.xls',
+  accept = ".xlsx,.xls",
   onUpload,
   progress,
   hint,
@@ -36,7 +36,7 @@ export function FileUploadZone({
       try {
         await onUpload(file);
       } finally {
-        if (inputRef.current) inputRef.current.value = '';
+        if (inputRef.current) inputRef.current.value = "";
       }
     },
     [onUpload],
@@ -45,7 +45,11 @@ export function FileUploadZone({
   return (
     <motion.div
       initial={false}
-      animate={hover ? { scale: 1.01, borderColor: '#B1222A' } : { scale: 1, borderColor: 'rgba(49,49,59,0.12)' }}
+      animate={
+        hover
+          ? { scale: 1.01, borderColor: "#B1222A" }
+          : { scale: 1, borderColor: "rgba(49,49,59,0.12)" }
+      }
       onDragOver={(e) => {
         e.preventDefault();
         setHover(true);
@@ -58,8 +62,8 @@ export function FileUploadZone({
         if (f) handle(f);
       }}
       className={cn(
-        'flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed bg-card p-8 text-center transition-colors',
-        hover && 'bg-seu-cream',
+        "flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed bg-card p-8 text-center transition-colors",
+        hover && "bg-seu-cream",
         className,
       )}
     >
@@ -68,7 +72,7 @@ export function FileUploadZone({
       </div>
       <div>
         <p className="text-sm font-medium text-foreground">
-          Drop your file here, or{' '}
+          Drop your file here, or{" "}
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
@@ -101,20 +105,30 @@ export function FileUploadZone({
             <FileSpreadsheet className="h-5 w-5 text-status-success" />
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-medium">{picked.name}</div>
-              <div className="text-xs text-muted-foreground">{(picked.size / 1024).toFixed(1)} KB</div>
-              {typeof progress === 'number' && (
+              <div className="text-xs text-muted-foreground">
+                {(picked.size / 1024).toFixed(1)} KB
+              </div>
+              {typeof progress === "number" && (
                 <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-seu-red/15">
                   <motion.div
                     className="h-full bg-seu-red"
                     initial={{ width: 0 }}
-                    animate={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
+                    animate={{
+                      width: `${Math.min(100, Math.max(0, progress))}%`,
+                    }}
                     transition={{ duration: 0.3 }}
                   />
                 </div>
               )}
             </div>
             {!busy && (
-              <Button variant="ghost" size="icon" type="button" onClick={() => setPicked(null)} aria-label="Clear">
+              <Button
+                variant="ghost"
+                size="icon"
+                type="button"
+                onClick={() => setPicked(null)}
+                aria-label="Clear"
+              >
                 <X className="h-4 w-4" />
               </Button>
             )}

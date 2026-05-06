@@ -14,7 +14,7 @@ import {
 import { useT } from "@/i18n/i18n";
 
 const badgeVariants = cva(
-  "inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium transition-colors",
+  "inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[12px] font-medium transition-colors",
   {
     variants: {
       tone: {
@@ -45,13 +45,13 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
 };
 
 const LABEL_KEYS: Record<string, string> = {
-  present: "attendance.present",
-  late: "attendance.late",
-  absent: "attendance.absent",
+  present: "common.statusPresent",
+  late: "common.statusLate",
+  absent: "common.statusAbsent",
   warning_1: "atRisk.warning1",
   warning_2: "atRisk.warning2",
   deprivation: "atRisk.deprivation",
-  info: "common.status",
+  info: "common.statusInfo",
 };
 
 export interface StatusBadgeProps extends VariantProps<typeof badgeVariants> {

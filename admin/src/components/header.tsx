@@ -79,10 +79,10 @@ export function Header() {
             window.dispatchEvent(ev);
           }}
           readOnly
-          className="h-8 pl-8 text-[13px]"
+          className="h-8 pl-8 text-[14px]"
           aria-label={t("common.globalSearch")}
         />
-        <kbd className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 rounded border border-border bg-muted px-1 py-px font-mono text-[10px] text-muted-foreground sm:inline-block">
+        <kbd className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 rounded border border-border bg-muted px-1 py-px font-mono text-[11px] text-muted-foreground sm:inline-block">
           ⌘K
         </kbd>
       </div>
@@ -95,7 +95,7 @@ export function Header() {
           }
           onClick={() => setLocale(locale === "ar" ? "en" : "ar")}
           title={locale === "ar" ? "EN" : "AR"}
-          className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <Languages className="h-3.5 w-3.5" />
           <span className="font-mono">{locale.toUpperCase()}</span>
@@ -157,7 +157,7 @@ export function Header() {
             aria-haspopup="menu"
             aria-expanded={menuOpen}
           >
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-seu-navy text-[11px] font-semibold text-white">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-seu-navy text-[12px] font-semibold text-white">
               {initial}
             </span>
             <span className="text-xs font-medium hidden sm:block max-w-[14ch] truncate">

@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { Inbox } from 'lucide-react';
-import { Button } from '@/components/ui';
+import { Inbox } from "lucide-react";
+import { Button } from "@/components/ui";
 
 /**
  * Empty-state row — replaces "No X yet" labels on every list page.
@@ -27,7 +27,9 @@ export function EmptyState({
       </div>
       <div>
         <p className="text-sm font-medium text-foreground">{title}</p>
-        {description && <p className="mt-1 text-xs text-muted-foreground">{description}</p>}
+        {description && (
+          <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+        )}
       </div>
       {actionLabel && onAction && (
         <Button size="sm" onClick={onAction}>

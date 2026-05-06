@@ -5,19 +5,19 @@
  * `globals.css` `:root`.
  */
 export const SEU = {
-  navy: '#31313B',
-  red: '#B1222A',
-  redHover: '#9d1d24',
-  gold: '#E4BD4F',
-  goldHover: '#cda737',
-  cream: '#F3EDE4',
-  gray: '#67666A',
-  white: '#FFFFFF',
+  navy: "#31313B",
+  red: "#B1222A",
+  redHover: "#9d1d24",
+  gold: "#E4BD4F",
+  goldHover: "#cda737",
+  cream: "#F3EDE4",
+  gray: "#67666A",
+  white: "#FFFFFF",
   status: {
-    success: '#2E7D32',
-    warning: '#E4BD4F',
-    danger: '#B1222A',
-    info: '#1976D2',
+    success: "#2E7D32",
+    warning: "#E4BD4F",
+    danger: "#B1222A",
+    info: "#1976D2",
   },
 } as const;
 

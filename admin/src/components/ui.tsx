@@ -242,7 +242,7 @@ export const Th = ({
 }) => (
   <th
     className={cn(
-      "sticky top-0 z-10 h-th px-3 text-left font-medium text-[11px] uppercase tracking-wider text-muted-foreground bg-muted/85 backdrop-blur",
+      "sticky top-0 z-10 h-th px-3 text-left font-medium text-[12px] uppercase tracking-wider text-muted-foreground bg-muted/85 backdrop-blur",
       "border-b border-border",
       className,
     )}
@@ -260,7 +260,7 @@ export const Td = ({
 }) => (
   <td
     className={cn(
-      "border-t border-border/60 px-3 align-middle text-[13px]",
+      "border-t border-border/60 px-3 align-middle text-[14px]",
       className,
     )}
     style={{ height: "var(--density-row)" }}
@@ -331,7 +331,7 @@ export function FilterChip({
       {typeof count === "number" && (
         <span
           className={cn(
-            "tabnum rounded-full px-1.5 py-px text-[11px]",
+            "tabnum rounded-full px-1.5 py-px text-[12px]",
             active ? "bg-seu-red text-white" : "bg-muted text-muted-foreground",
           )}
         >

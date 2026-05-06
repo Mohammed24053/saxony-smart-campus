@@ -188,7 +188,7 @@ export default function DashboardPage() {
                   {t("dashboard.attendanceSubtitle")}
                 </CardDescription>
               </div>
-              <span className="rounded bg-seu-red/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-seu-red">
+              <span className="rounded bg-seu-red/10 px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-wider text-seu-red">
                 {t("dashboard.chip14d")}
               </span>
             </div>
@@ -239,7 +239,7 @@ export default function DashboardPage() {
                 </PieChart>
               </ResponsiveContainer>
               <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
                   {t("dashboard.breakdownTotal")}
                 </div>
                 <div className="text-2xl font-semibold tabnum text-foreground">
@@ -247,7 +247,7 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
-            <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+            <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[12px] text-muted-foreground">
               {(allZero ? [] : atRiskBreakdown).map((b) => (
                 <div key={b.name} className="inline-flex items-center gap-1.5">
                   <span
@@ -275,7 +275,7 @@ export default function DashboardPage() {
                   {t("dashboard.liveSessionsSub")}
                 </CardDescription>
               </div>
-              <span className="inline-flex items-center gap-1.5 text-[11px] text-status-success">
+              <span className="inline-flex items-center gap-1.5 text-[12px] text-status-success">
                 <span className="relative flex h-2 w-2" aria-hidden>
                   <span className="absolute inline-flex h-full w-full animate-live-dot rounded-full bg-status-success/60" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-status-success" />

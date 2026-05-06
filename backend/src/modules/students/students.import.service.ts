@@ -52,7 +52,14 @@ export class StudentsImportService {
       if (h) headerIdx[String(h).trim()] = idx;
     });
     for (const h of HEADERS) {
-      if (!headerIdx[h] && h !== 'sectionId' && h !== 'phone' && h !== 'email' && h !== 'faculty' && h !== 'year') {
+      if (
+        !headerIdx[h] &&
+        h !== 'sectionId' &&
+        h !== 'phone' &&
+        h !== 'email' &&
+        h !== 'faculty' &&
+        h !== 'year'
+      ) {
         throw new AppException(ErrorCodes.IMPORT_VALIDATION_FAILED, {
           message: `Missing required header: ${h}`,
         });

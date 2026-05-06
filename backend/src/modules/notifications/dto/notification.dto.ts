@@ -19,7 +19,10 @@ export class SendNotificationDto {
   @IsString()
   body!: string;
 
-  @ApiProperty({ enum: NOTIFICATION_TARGET_TYPES, description: 'user | section | subject | broadcast' })
+  @ApiProperty({
+    enum: NOTIFICATION_TARGET_TYPES,
+    description: 'user | section | subject | broadcast',
+  })
   @IsIn(NOTIFICATION_TARGET_TYPES as unknown as string[])
   targetType!: NotificationTargetType;
 

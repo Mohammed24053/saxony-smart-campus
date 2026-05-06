@@ -65,8 +65,15 @@ export class PasswordResetService {
   }
 
   /** Validates the token and applies the new password. */
-  async confirmReset(token: string, newPassword: string, meta: { ip?: string; ua?: string } = {}): Promise<void> {
-    if (newPassword.length < 8) throw new AppException(ErrorCodes.VALIDATION_ERROR, { message: 'Password must be at least 8 characters' });
+  async confirmReset(
+    token: string,
+    newPassword: string,
+    meta: { ip?: string; ua?: string } = {},
+  ): Promise<void> {
+    if (newPassword.length < 8)
+      throw new AppException(ErrorCodes.VALIDATION_ERROR, {
+        message: 'Password must be at least 8 characters',
+      });
 
     const candidates = await this.prisma.passwordResetToken.findMany({
       where: { usedAt: null, expiresAt: { gt: new Date() } },
@@ -87,7 +94,10 @@ export class PasswordResetService {
     const passwordHash = await bcrypt.hash(newPassword, 10);
     await this.prisma.$transaction([
       this.prisma.user.update({ where: { id: matched.userId }, data: { passwordHash } }),
-      this.prisma.passwordResetToken.update({ where: { id: matched.id }, data: { usedAt: new Date() } }),
+      this.prisma.passwordResetToken.update({
+        where: { id: matched.id },
+        data: { usedAt: new Date() },
+      }),
     ]);
 
     // Revoke all existing refresh tokens — force re-login on every device.

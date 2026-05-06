@@ -152,11 +152,7 @@ export class AttendanceService {
    * Then writes the AttendanceRecord, emits a WebSocket event, returns the
    * resolved status (present | late).
    */
-  async scan(
-    universityId: string,
-    student: AuthPrincipal,
-    dto: ScanQrDto,
-  ): Promise<ScanResult> {
+  async scan(universityId: string, student: AuthPrincipal, dto: ScanQrDto): Promise<ScanResult> {
     if (student.role !== 'student') throw new AppException(ErrorCodes.FORBIDDEN);
 
     // Per-device rate limit: 5 scans / 30s.
@@ -261,7 +257,11 @@ export class AttendanceService {
     universityId: string,
     doctor: AuthPrincipal,
     sessionId: string,
-  ): Promise<{ session: AttendanceSession; counts: { present: number; late: number; absent: number; total: number }; records: AttendanceRecord[] }> {
+  ): Promise<{
+    session: AttendanceSession;
+    counts: { present: number; late: number; absent: number; total: number };
+    records: AttendanceRecord[];
+  }> {
     const session = await this.requireDoctorSession(universityId, doctor, sessionId, false);
     const counts = await this.computeCounts(sessionId);
     const records = await this.prisma.attendanceRecord.findMany({
@@ -290,10 +290,7 @@ export class AttendanceService {
     });
   }
 
-  async studentHistory(
-    universityId: string,
-    studentUserId: string,
-  ): Promise<AttendanceRecord[]> {
+  async studentHistory(universityId: string, studentUserId: string): Promise<AttendanceRecord[]> {
     // Confirm the student belongs to this tenant.
     const u = await this.prisma.user.findFirst({
       where: { id: studentUserId, universityId, role: 'student' },
@@ -301,7 +298,9 @@ export class AttendanceService {
     if (!u) throw new AppException(ErrorCodes.NOT_FOUND);
     return this.prisma.attendanceRecord.findMany({
       where: { studentId: studentUserId },
-      include: { session: { include: { scheduleSlot: { include: { subject: true, room: true } } } } },
+      include: {
+        session: { include: { scheduleSlot: { include: { subject: true, room: true } } } },
+      },
       orderBy: { createdAt: 'desc' },
     });
   }

@@ -1,12 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsEnum,
-  IsLatitude,
-  IsLongitude,
-  IsNumber,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsEnum, IsLatitude, IsLongitude, IsNumber, IsOptional, IsString } from 'class-validator';
 import { AttendanceStatus } from '@prisma/client';
 
 export class StartSessionDto {
@@ -19,7 +12,10 @@ export class StartSessionDto {
   @IsNumber()
   intervalSeconds?: number;
 
-  @ApiPropertyOptional({ default: 15, description: 'Minutes after session start before scans are marked late.' })
+  @ApiPropertyOptional({
+    default: 15,
+    description: 'Minutes after session start before scans are marked late.',
+  })
   @IsOptional()
   @IsNumber()
   lateAfterMinutes?: number;

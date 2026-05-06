@@ -71,7 +71,9 @@ export function toMin(time: string): number {
 }
 
 export function toTime(min: number): string {
-  const h = Math.floor(min / 60).toString().padStart(2, '0');
+  const h = Math.floor(min / 60)
+    .toString()
+    .padStart(2, '0');
   const m = (min % 60).toString().padStart(2, '0');
   return `${h}:${m}`;
 }
@@ -127,7 +129,8 @@ function isDoctorFree(
   end: number,
 ): boolean {
   return !taken.some(
-    (s) => s.doctorId === doctorId && s.dayOfWeek === day && overlaps(s.startMin, s.endMin, start, end),
+    (s) =>
+      s.doctorId === doctorId && s.dayOfWeek === day && overlaps(s.startMin, s.endMin, start, end),
   );
 }
 
@@ -139,7 +142,10 @@ function isSectionFree(
   end: number,
 ): boolean {
   return !taken.some(
-    (s) => s.sectionId === sectionId && s.dayOfWeek === day && overlaps(s.startMin, s.endMin, start, end),
+    (s) =>
+      s.sectionId === sectionId &&
+      s.dayOfWeek === day &&
+      overlaps(s.startMin, s.endMin, start, end),
   );
 }
 
@@ -161,9 +167,7 @@ export function planSchedule(input: {
         conflicts.push({ subjectId, sectionId: section.id, reason: 'NO_DOCTOR' });
         continue;
       }
-      const doctor = subject.defaultDoctorId
-        ? doctorsById.get(subject.defaultDoctorId)
-        : undefined;
+      const doctor = subject.defaultDoctorId ? doctorsById.get(subject.defaultDoctorId) : undefined;
       if (!doctor) {
         conflicts.push({ subjectId, sectionId: section.id, reason: 'NO_DOCTOR' });
         continue;
@@ -180,7 +184,15 @@ export function planSchedule(input: {
           if (!isInsideAvailability(doctor.availability, day, start, end)) continue;
           if (!isDoctorFree(doctor.id, slots, day, start, end)) continue;
           if (!isSectionFree(section.id, slots, day, start, end)) continue;
-          const room = pickRoom(section.studentCount, input.rooms, slots, day, start, end, preferType);
+          const room = pickRoom(
+            section.studentCount,
+            input.rooms,
+            slots,
+            day,
+            start,
+            end,
+            preferType,
+          );
           if (!room) continue;
           slots.push({
             subjectId,

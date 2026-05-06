@@ -90,7 +90,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
     status: number,
     raw: string | object,
   ): { code: string; message: string; details?: unknown } {
-    let message = typeof raw === 'string' ? raw : (raw as { message?: unknown }).message?.toString?.() ?? '';
+    let message =
+      typeof raw === 'string' ? raw : ((raw as { message?: unknown }).message?.toString?.() ?? '');
     let details: unknown;
 
     // class-validator returns { statusCode, message: string[], error }
@@ -105,7 +106,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     const code = this.statusToCode(status);
-    return { code, message: message || errorMessages[code as keyof typeof errorMessages] || 'Error', details };
+    return {
+      code,
+      message: message || errorMessages[code as keyof typeof errorMessages] || 'Error',
+      details,
+    };
   }
 
   private statusToCode(status: number): string {

@@ -61,7 +61,10 @@ export class StudentsController {
   async template(@Res() res: Response) {
     const buf = await this.importer.generateTemplate();
     res
-      .setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+      .setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      )
       .setHeader('Content-Disposition', 'attachment; filename="students-template.xlsx"')
       .send(buf);
   }

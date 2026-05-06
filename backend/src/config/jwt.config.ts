@@ -19,11 +19,14 @@ function normalize(key: string | undefined): string {
   return key.replace(/\\n/g, '\n').trim();
 }
 
-export default registerAs('jwt', (): JwtConfig => ({
-  algorithm: 'RS256',
-  accessPrivateKey: normalize(process.env.JWT_ACCESS_PRIVATE_KEY),
-  accessPublicKey: normalize(process.env.JWT_ACCESS_PUBLIC_KEY),
-  refreshSecret: process.env.JWT_REFRESH_SECRET ?? '',
-  accessExpires: process.env.JWT_ACCESS_EXPIRES ?? '15m',
-  refreshExpires: process.env.JWT_REFRESH_EXPIRES ?? '7d',
-}));
+export default registerAs(
+  'jwt',
+  (): JwtConfig => ({
+    algorithm: 'RS256',
+    accessPrivateKey: normalize(process.env.JWT_ACCESS_PRIVATE_KEY),
+    accessPublicKey: normalize(process.env.JWT_ACCESS_PUBLIC_KEY),
+    refreshSecret: process.env.JWT_REFRESH_SECRET ?? '',
+    accessExpires: process.env.JWT_ACCESS_EXPIRES ?? '15m',
+    refreshExpires: process.env.JWT_REFRESH_EXPIRES ?? '7d',
+  }),
+);

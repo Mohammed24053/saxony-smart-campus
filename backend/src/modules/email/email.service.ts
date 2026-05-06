@@ -51,7 +51,9 @@ export class EmailService {
         to: msg.to,
         subject: msg.subject,
         text: msg.text,
-        html: msg.html ?? `<pre style="font-family:Inter,system-ui,sans-serif">${escapeHtml(msg.text)}</pre>`,
+        html:
+          msg.html ??
+          `<pre style="font-family:Inter,system-ui,sans-serif">${escapeHtml(msg.text)}</pre>`,
       });
       return true;
     } catch (err) {

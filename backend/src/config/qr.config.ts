@@ -5,7 +5,10 @@ export interface QrConfig {
   defaultIntervalSeconds: number;
 }
 
-export default registerAs('qr', (): QrConfig => ({
-  hmacSecret: process.env.QR_HMAC_SECRET ?? '',
-  defaultIntervalSeconds: parseInt(process.env.QR_DEFAULT_INTERVAL_SECONDS ?? '30', 10),
-}));
+export default registerAs(
+  'qr',
+  (): QrConfig => ({
+    hmacSecret: process.env.QR_HMAC_SECRET ?? '',
+    defaultIntervalSeconds: parseInt(process.env.QR_DEFAULT_INTERVAL_SECONDS ?? '30', 10),
+  }),
+);

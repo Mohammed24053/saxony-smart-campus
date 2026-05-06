@@ -46,7 +46,7 @@ export class ScheduleController {
   }
 
   @Get('my')
-  @ApiOperation({ summary: 'Current user\'s schedule (student or doctor).' })
+  @ApiOperation({ summary: "Current user's schedule (student or doctor)." })
   my(@CurrentUniversity() uni: string, @CurrentUser() user: AuthPrincipal) {
     if (!uni) throw new AppException(ErrorCodes.UNAUTHORIZED);
     if (user.role === 'student') return this.schedule.listForStudent(uni, user.userId);

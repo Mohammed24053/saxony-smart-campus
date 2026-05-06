@@ -14,7 +14,7 @@ describe('GpsService', () => {
   });
 
   it('isWithinRadius returns true when inside', () => {
-    expect(svc.isWithinRadius(30.04440, 31.2357, 30.04445, 31.2357, 50)).toBe(true);
+    expect(svc.isWithinRadius(30.0444, 31.2357, 30.04445, 31.2357, 50)).toBe(true);
   });
 
   it('isWithinRadius returns false when outside', () => {

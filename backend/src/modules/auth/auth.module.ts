@@ -28,6 +28,6 @@ import { TwoFactorService } from './two-factor.service';
   ],
   controllers: [AuthController],
   providers: [AuthService, TokenService, TwoFactorService, JwtStrategy],
-  exports: [AuthService, TokenService, TwoFactorService],
+  exports: [AuthService, TokenService, TwoFactorService, JwtModule],
 })
 export class AuthModule {}

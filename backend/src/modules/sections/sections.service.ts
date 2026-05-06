@@ -33,7 +33,10 @@ export class SectionsService {
     return paginate(data, total, page, pageSize);
   }
 
-  async findById(universityId: string, id: string): Promise<Section & { subjects: { subjectId: string }[] }> {
+  async findById(
+    universityId: string,
+    id: string,
+  ): Promise<Section & { subjects: { subjectId: string }[] }> {
     const s = await this.prisma.section.findFirst({
       where: { id, universityId, deletedAt: null },
       include: { subjects: { select: { subjectId: true } } },

@@ -37,7 +37,16 @@ import { ReportsModule } from './modules/reports/reports.module';
     ConfigModule.forRoot({ isGlobal: true, load: allConfig }),
     ThrottlerModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: () => ({ throttlers: [{ ttl: 60_000, limit: 100 }] }),
+      useFactory: () => ({
+        // Multiple named throttlers — endpoints opt into strict tiers via
+        // @Throttle({ short: { limit, ttl } }). The default "global" tier
+        // applies to every route automatically.
+        throttlers: [
+          { name: 'global', ttl: 60_000, limit: 100 },
+          { name: 'short', ttl: 60_000, limit: 5 },
+          { name: 'medium', ttl: 600_000, limit: 20 },
+        ],
+      }),
     }),
     PrismaModule,
     RedisModule,

@@ -21,7 +21,10 @@ function basePrisma(overrides: Record<string, unknown> = {}): any {
       update: jest.fn(),
       findFirst: jest.fn().mockResolvedValue(null),
     },
-    user: { findFirst: jest.fn().mockResolvedValue(null), findMany: jest.fn().mockResolvedValue([]) },
+    user: {
+      findFirst: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+    },
     student: { findMany: jest.fn().mockResolvedValue([]) },
     attendanceSession: { findUnique: jest.fn().mockResolvedValue(null) },
     attendanceRecord: { count: jest.fn().mockResolvedValue(0) },
@@ -77,9 +80,15 @@ describe('AtRiskService.runCheck', () => {
 
   it('creates a warning_1 record when student crosses threshold', async () => {
     const setting = {
-      id: 'set1', subjectId: 'sub1', universityId: 'uni1',
-      warning1Absences: 3, warning2Absences: 5, deprivationAbsences: 7,
-      notifyStudent: true, notifyDoctor: false, notifyAdmin: false,
+      id: 'set1',
+      subjectId: 'sub1',
+      universityId: 'uni1',
+      warning1Absences: 3,
+      warning2Absences: 5,
+      deprivationAbsences: 7,
+      notifyStudent: true,
+      notifyDoctor: false,
+      notifyAdmin: false,
     };
     const prisma = basePrisma({
       attendanceSession: { findUnique: jest.fn().mockResolvedValue(session) },
@@ -88,9 +97,9 @@ describe('AtRiskService.runCheck', () => {
         findUnique: jest.fn().mockResolvedValue(setting),
       },
       student: {
-        findMany: jest.fn().mockResolvedValue([
-          { id: 'stu1', user: { id: 'stu1', fcmToken: 'TKN' } },
-        ]),
+        findMany: jest
+          .fn()
+          .mockResolvedValue([{ id: 'stu1', user: { id: 'stu1', fcmToken: 'TKN' } }]),
       },
       attendanceRecord: { count: jest.fn().mockResolvedValue(3) },
       atRiskRecord: { ...basePrisma().atRiskRecord, findFirst: jest.fn().mockResolvedValue(null) },
@@ -105,9 +114,15 @@ describe('AtRiskService.runCheck', () => {
 
   it('creates a deprivation record when threshold exceeded', async () => {
     const setting = {
-      id: 'set1', subjectId: 'sub1', universityId: 'uni1',
-      warning1Absences: 3, warning2Absences: 5, deprivationAbsences: 7,
-      notifyStudent: true, notifyDoctor: true, notifyAdmin: true,
+      id: 'set1',
+      subjectId: 'sub1',
+      universityId: 'uni1',
+      warning1Absences: 3,
+      warning2Absences: 5,
+      deprivationAbsences: 7,
+      notifyStudent: true,
+      notifyDoctor: true,
+      notifyAdmin: true,
     };
     notifications.send.mockClear();
     fcm.send.mockClear();
@@ -122,9 +137,9 @@ describe('AtRiskService.runCheck', () => {
         findFirst: jest.fn(),
       },
       student: {
-        findMany: jest.fn().mockResolvedValue([
-          { id: 'stu1', user: { id: 'stu1', fcmToken: null } },
-        ]),
+        findMany: jest
+          .fn()
+          .mockResolvedValue([{ id: 'stu1', user: { id: 'stu1', fcmToken: null } }]),
       },
       attendanceRecord: { count: jest.fn().mockResolvedValue(8) },
       atRiskRecord: { ...basePrisma().atRiskRecord, findFirst: jest.fn().mockResolvedValue(null) },
@@ -138,9 +153,15 @@ describe('AtRiskService.runCheck', () => {
 
   it('skips students that already have a record at this level', async () => {
     const setting = {
-      id: 'set1', subjectId: 'sub1', universityId: 'uni1',
-      warning1Absences: 3, warning2Absences: 5, deprivationAbsences: 7,
-      notifyStudent: true, notifyDoctor: false, notifyAdmin: false,
+      id: 'set1',
+      subjectId: 'sub1',
+      universityId: 'uni1',
+      warning1Absences: 3,
+      warning2Absences: 5,
+      deprivationAbsences: 7,
+      notifyStudent: true,
+      notifyDoctor: false,
+      notifyAdmin: false,
     };
     const prisma = basePrisma({
       attendanceSession: { findUnique: jest.fn().mockResolvedValue(session) },
@@ -149,9 +170,9 @@ describe('AtRiskService.runCheck', () => {
         findUnique: jest.fn().mockResolvedValue(setting),
       },
       student: {
-        findMany: jest.fn().mockResolvedValue([
-          { id: 'stu1', user: { id: 'stu1', fcmToken: null } },
-        ]),
+        findMany: jest
+          .fn()
+          .mockResolvedValue([{ id: 'stu1', user: { id: 'stu1', fcmToken: null } }]),
       },
       attendanceRecord: { count: jest.fn().mockResolvedValue(4) },
       atRiskRecord: {

@@ -3,7 +3,9 @@ import { QrTokenService } from './qr-token.service';
 
 function makeService(intervalSeconds = 30, secret = 'test-secret') {
   const config = {
-    getOrThrow: jest.fn().mockReturnValue({ hmacSecret: secret, defaultIntervalSeconds: intervalSeconds }),
+    getOrThrow: jest
+      .fn()
+      .mockReturnValue({ hmacSecret: secret, defaultIntervalSeconds: intervalSeconds }),
   } as unknown as ConfigService;
   return new QrTokenService(config);
 }

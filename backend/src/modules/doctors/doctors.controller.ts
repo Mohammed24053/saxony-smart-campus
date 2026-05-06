@@ -65,7 +65,7 @@ export class DoctorsController {
 
   @Put(':id/availability')
   @Roles('admin')
-  @ApiOperation({ summary: 'Replace the doctor\'s weekly availability.' })
+  @ApiOperation({ summary: "Replace the doctor's weekly availability." })
   updateAvailability(
     @CurrentUniversity() uni: string,
     @Param('id', new ParseUUIDPipe()) id: string,

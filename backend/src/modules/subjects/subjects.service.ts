@@ -50,7 +50,8 @@ export class SubjectsService {
 
   async create(universityId: string, dto: CreateSubjectDto): Promise<Subject> {
     const dup = await this.prisma.subject.findUnique({ where: { code: dto.code } });
-    if (dup) throw new AppException(ErrorCodes.CONFLICT, { message: 'subject code already exists' });
+    if (dup)
+      throw new AppException(ErrorCodes.CONFLICT, { message: 'subject code already exists' });
     return this.prisma.subject.create({
       data: { universityId, ...dto },
     });

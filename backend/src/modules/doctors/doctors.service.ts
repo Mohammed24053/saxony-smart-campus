@@ -52,12 +52,18 @@ export class DoctorsService {
         take: pageSize,
       }),
     ]);
-    return paginate(rows.map((u) => this.shape(u)), total, page, pageSize);
+    return paginate(
+      rows.map((u) => this.shape(u)),
+      total,
+      page,
+      pageSize,
+    );
   }
 
   async create(universityId: string, dto: CreateDoctorDto): Promise<DoctorRow> {
     const existing = await this.prisma.doctor.findUnique({ where: { doctorId: dto.doctorId } });
-    if (existing) throw new AppException(ErrorCodes.CONFLICT, { message: 'doctorId already exists' });
+    if (existing)
+      throw new AppException(ErrorCodes.CONFLICT, { message: 'doctorId already exists' });
     if (dto.email) {
       const e = await this.prisma.user.findUnique({ where: { email: dto.email } });
       if (e) throw new AppException(ErrorCodes.CONFLICT, { message: 'email already exists' });
@@ -141,8 +147,12 @@ export class DoctorsService {
   }
 
   private shape(u: {
-    id: string; name: string; email: string | null; phone: string | null;
-    isActive: boolean; createdAt: Date;
+    id: string;
+    name: string;
+    email: string | null;
+    phone: string | null;
+    isActive: boolean;
+    createdAt: Date;
     doctor: { doctorId: string; availability: unknown } | null;
   }): DoctorRow {
     return {

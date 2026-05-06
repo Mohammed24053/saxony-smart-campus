@@ -197,11 +197,7 @@ export class ScheduleService {
       universityId,
       deletedAt: null,
       dayOfWeek: dto.dayOfWeek,
-      OR: [
-        { doctorId: dto.doctorId },
-        { roomId: dto.roomId },
-        { sectionId: dto.sectionId },
-      ],
+      OR: [{ doctorId: dto.doctorId }, { roomId: dto.roomId }, { sectionId: dto.sectionId }],
       ...(ignoreId ? { NOT: { id: ignoreId } } : {}),
     };
     const others = await this.prisma.scheduleSlot.findMany({ where });
@@ -224,7 +220,13 @@ function parseAvailability(raw: unknown): AvailabilityMap {
   if (!raw || typeof raw !== 'object') return out;
   const obj = raw as Record<string, unknown>;
   const dayMap: Record<string, number> = {
-    sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6,
+    sun: 0,
+    mon: 1,
+    tue: 2,
+    wed: 3,
+    thu: 4,
+    fri: 5,
+    sat: 6,
   };
   for (const [k, v] of Object.entries(obj)) {
     let day: number | null = null;

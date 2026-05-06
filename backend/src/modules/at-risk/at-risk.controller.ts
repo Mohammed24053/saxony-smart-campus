@@ -19,11 +19,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { PaginationQueryDto } from '../../common/dto/pagination.dto';
 import { AtRiskService } from './at-risk.service';
-import {
-  CreateAtRiskSettingDto,
-  NotifyAtRiskDto,
-  UpdateAtRiskSettingDto,
-} from './dto/at-risk.dto';
+import { CreateAtRiskSettingDto, NotifyAtRiskDto, UpdateAtRiskSettingDto } from './dto/at-risk.dto';
 import { AppException } from '../../common/errors/app.exception';
 import { ErrorCodes } from '../../common/errors/error-codes';
 
@@ -96,10 +92,7 @@ export class AtRiskController {
 
   @Put(':id/resolve')
   @Roles('admin')
-  resolve(
-    @CurrentUniversity() uni: string,
-    @Param('id', new ParseUUIDPipe()) id: string,
-  ) {
+  resolve(@CurrentUniversity() uni: string, @Param('id', new ParseUUIDPipe()) id: string) {
     if (!uni) throw new AppException(ErrorCodes.UNAUTHORIZED);
     return this.atRisk.resolve(id);
   }

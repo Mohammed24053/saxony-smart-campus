@@ -15,7 +15,10 @@ export interface UniversitySettings {
 
 @Injectable()
 export class SettingsService {
-  constructor(private readonly prisma: PrismaService, private readonly audit: AuditService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+  ) {}
 
   async get(universityId: string) {
     const u = await this.prisma.university.findUnique({ where: { id: universityId } });
@@ -36,7 +39,11 @@ export class SettingsService {
     };
   }
 
-  async update(universityId: string, actorId: string, patch: Partial<UniversitySettings> & { name?: string }) {
+  async update(
+    universityId: string,
+    actorId: string,
+    patch: Partial<UniversitySettings> & { name?: string },
+  ) {
     const before = await this.prisma.university.findUnique({ where: { id: universityId } });
     if (!before) throw new AppException(ErrorCodes.NOT_FOUND);
     const merged = { ...((before.settings ?? {}) as object), ...patch };

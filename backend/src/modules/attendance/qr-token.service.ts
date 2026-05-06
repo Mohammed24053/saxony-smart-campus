@@ -59,7 +59,12 @@ export class QrTokenService {
 
   parsePayload(payload: string): QrTokenInputs & { token: string; intervalSeconds: number } {
     const obj = JSON.parse(payload) as {
-      v: number; s: string; r: string; c: string; i: number; t: string;
+      v: number;
+      s: string;
+      r: string;
+      c: string;
+      i: number;
+      t: string;
     };
     if (!obj || obj.v !== 1) throw new Error('unsupported QR version');
     return {
@@ -75,7 +80,9 @@ export class QrTokenService {
    * Returns the verified token data when the HMAC matches the current OR the
    * immediately-previous time window (5-second grace). Returns null otherwise.
    */
-  verify(parsed: QrTokenInputs & { token: string; intervalSeconds: number }): VerifiedQrToken | null {
+  verify(
+    parsed: QrTokenInputs & { token: string; intervalSeconds: number },
+  ): VerifiedQrToken | null {
     const interval = parsed.intervalSeconds ?? this.defaultInterval;
     const now = this.currentWindow(interval);
     for (const tw of [now, now - 1]) {

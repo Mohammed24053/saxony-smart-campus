@@ -8,11 +8,7 @@ import { ErrorCodes } from '../../common/errors/error-codes';
 import { Paginated, paginate } from '../../common/dto/pagination.dto';
 import { FcmService } from '../notifications/fcm.service';
 import { NotificationsService } from '../notifications/notifications.service';
-import {
-  CreateAtRiskSettingDto,
-  NotifyAtRiskDto,
-  UpdateAtRiskSettingDto,
-} from './dto/at-risk.dto';
+import { CreateAtRiskSettingDto, NotifyAtRiskDto, UpdateAtRiskSettingDto } from './dto/at-risk.dto';
 
 @Injectable()
 export class AtRiskService {
@@ -207,7 +203,8 @@ export class AtRiskService {
 
       const recipients: string[] = [];
       if (setting.notifyStudent) recipients.push(student.id);
-      if (setting.notifyDoctor && session.scheduleSlot.doctorId) recipients.push(session.scheduleSlot.doctorId);
+      if (setting.notifyDoctor && session.scheduleSlot.doctorId)
+        recipients.push(session.scheduleSlot.doctorId);
       if (setting.notifyAdmin) {
         // eslint-disable-next-line no-await-in-loop
         const admins = await this.prisma.user.findMany({
@@ -243,10 +240,7 @@ export class AtRiskService {
   }
 }
 
-function pickWarningLevel(
-  absenceCount: number,
-  setting: AtRiskSetting,
-): WarningLevel | null {
+function pickWarningLevel(absenceCount: number, setting: AtRiskSetting): WarningLevel | null {
   if (absenceCount >= setting.deprivationAbsences) return WarningLevel.deprivation;
   if (absenceCount >= setting.warning2Absences) return WarningLevel.warning_2;
   if (absenceCount >= setting.warning1Absences) return WarningLevel.warning_1;

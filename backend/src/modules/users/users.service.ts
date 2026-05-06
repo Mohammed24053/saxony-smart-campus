@@ -25,7 +25,10 @@ export interface UpdateUserInput {
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService, private readonly audit: AuditService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+  ) {}
 
   async list(
     universityId: string,
@@ -69,7 +72,8 @@ export class UsersService {
 
   async create(universityId: string, actorId: string, input: CreateUserInput) {
     const existing = await this.prisma.user.findUnique({ where: { email: input.email } });
-    if (existing) throw new AppException(ErrorCodes.VALIDATION_ERROR, { message: 'Email already in use' });
+    if (existing)
+      throw new AppException(ErrorCodes.VALIDATION_ERROR, { message: 'Email already in use' });
     const password = input.password ?? this.generatePassword();
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await this.prisma.user.create({
@@ -95,11 +99,14 @@ export class UsersService {
   }
 
   async update(universityId: string, actorId: string, id: string, input: UpdateUserInput) {
-    const before = await this.prisma.user.findFirst({ where: { id, universityId, deletedAt: null } });
+    const before = await this.prisma.user.findFirst({
+      where: { id, universityId, deletedAt: null },
+    });
     if (!before) throw new AppException(ErrorCodes.NOT_FOUND);
     if (input.email && input.email !== before.email) {
       const exists = await this.prisma.user.findUnique({ where: { email: input.email } });
-      if (exists) throw new AppException(ErrorCodes.VALIDATION_ERROR, { message: 'Email already in use' });
+      if (exists)
+        throw new AppException(ErrorCodes.VALIDATION_ERROR, { message: 'Email already in use' });
     }
     const after = await this.prisma.user.update({
       where: { id },
@@ -117,7 +124,12 @@ export class UsersService {
       action: 'user.update',
       entity: 'User',
       entityId: id,
-      before: { name: before.name, email: before.email, phone: before.phone, isActive: before.isActive },
+      before: {
+        name: before.name,
+        email: before.email,
+        phone: before.phone,
+        isActive: before.isActive,
+      },
       after,
     });
     return after;
@@ -126,7 +138,8 @@ export class UsersService {
   async remove(universityId: string, actorId: string, id: string) {
     const user = await this.prisma.user.findFirst({ where: { id, universityId, deletedAt: null } });
     if (!user) throw new AppException(ErrorCodes.NOT_FOUND);
-    if (user.id === actorId) throw new AppException(ErrorCodes.VALIDATION_ERROR, { message: 'Cannot delete yourself' });
+    if (user.id === actorId)
+      throw new AppException(ErrorCodes.VALIDATION_ERROR, { message: 'Cannot delete yourself' });
     await this.prisma.user.update({
       where: { id },
       data: { deletedAt: new Date(), isActive: false },

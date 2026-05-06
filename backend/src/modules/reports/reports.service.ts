@@ -12,7 +12,14 @@ export class ReportsService {
     const session = await this.prisma.attendanceSession.findFirst({
       where: { id: sessionId, scheduleSlot: { universityId } },
       include: {
-        scheduleSlot: { include: { subject: true, room: true, section: true, doctor: { include: { user: true } } } },
+        scheduleSlot: {
+          include: {
+            subject: true,
+            room: true,
+            section: true,
+            doctor: { include: { user: true } },
+          },
+        },
         records: { include: { student: { include: { user: true } } } },
       },
     });
@@ -68,7 +75,8 @@ export class ReportsService {
       subject: { id: subject.id, code: subject.code, name: subject.name },
       sessionCount: sessions.length,
       totals,
-      attendanceRate: denom > 0 ? Math.round(((totals.present + totals.late) / denom) * 1000) / 10 : 0,
+      attendanceRate:
+        denom > 0 ? Math.round(((totals.present + totals.late) / denom) * 1000) / 10 : 0,
       sessions: sessions.map((s) => ({
         id: s.id,
         section: s.scheduleSlot.section.name,
@@ -82,9 +90,27 @@ export class ReportsService {
   }
 
   toCsvSession(report: Awaited<ReturnType<ReportsService['sessionReport']>>): string {
-    const header = ['studentId', 'name', 'externalId', 'status', 'scannedAt', 'gpsDistance', 'isManual', 'manualReason'];
+    const header = [
+      'studentId',
+      'name',
+      'externalId',
+      'status',
+      'scannedAt',
+      'gpsDistance',
+      'isManual',
+      'manualReason',
+    ];
     const rows = report.records.map((r) =>
-      [r.studentId, csvEscape(r.name), r.externalId, r.status, r.scannedAt?.toISOString() ?? '', r.gpsDistance ?? '', r.isManual, csvEscape(r.manualReason ?? '')].join(','),
+      [
+        r.studentId,
+        csvEscape(r.name),
+        r.externalId,
+        r.status,
+        r.scannedAt?.toISOString() ?? '',
+        r.gpsDistance ?? '',
+        r.isManual,
+        csvEscape(r.manualReason ?? ''),
+      ].join(','),
     );
     return [header.join(','), ...rows].join('\n');
   }
@@ -92,7 +118,15 @@ export class ReportsService {
   toCsvSubject(report: Awaited<ReturnType<ReportsService['subjectReport']>>): string {
     const header = ['sessionId', 'section', 'startedAt', 'endedAt', 'present', 'late', 'absent'];
     const rows = report.sessions.map((s) =>
-      [s.id, csvEscape(s.section), s.startedAt.toISOString(), s.endedAt?.toISOString() ?? '', s.presentCount, s.lateCount, s.absentCount].join(','),
+      [
+        s.id,
+        csvEscape(s.section),
+        s.startedAt.toISOString(),
+        s.endedAt?.toISOString() ?? '',
+        s.presentCount,
+        s.lateCount,
+        s.absentCount,
+      ].join(','),
     );
     return [header.join(','), ...rows].join('\n');
   }

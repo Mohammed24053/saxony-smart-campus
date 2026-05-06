@@ -6,26 +6,45 @@ import { ErrorCodes } from '../../common/errors/error-codes';
 import { AuthPrincipal } from '../../common/decorators/current-user.decorator';
 
 const studentPrincipal: AuthPrincipal = {
-  userId: 'stu1', role: 'student', universityId: 'uni1', email: 'stu@x.com',
+  userId: 'stu1',
+  role: 'student',
+  universityId: 'uni1',
+  email: 'stu@x.com',
 };
 
-function setup(opts: {
-  qrVerify?: object | null;
-  qrParse?: object;
-  qrCodeRow?: object | null;
-  session?: object | null;
-  enrolledStudent?: object | null;
-  redisGet?: string | null;
-  setNxEx?: 'OK' | null;
-  rateLimitOk?: boolean;
-} = {}): any {
+function setup(
+  opts: {
+    qrVerify?: object | null;
+    qrParse?: object;
+    qrCodeRow?: object | null;
+    session?: object | null;
+    enrolledStudent?: object | null;
+    redisGet?: string | null;
+    setNxEx?: 'OK' | null;
+    rateLimitOk?: boolean;
+  } = {},
+): any {
   const qr = {
-    parsePayload: jest.fn().mockReturnValue(opts.qrParse ?? {
-      sessionId: 's1', roomId: 'r1', courseId: 'c1', intervalSeconds: 30, token: 't1',
-    }),
-    verify: jest.fn().mockReturnValue(opts.qrVerify === undefined ? {
-      sessionId: 's1', roomId: 'r1', courseId: 'c1', timeWindow: 1, ageSeconds: 5,
-    } : opts.qrVerify),
+    parsePayload: jest.fn().mockReturnValue(
+      opts.qrParse ?? {
+        sessionId: 's1',
+        roomId: 'r1',
+        courseId: 'c1',
+        intervalSeconds: 30,
+        token: 't1',
+      },
+    ),
+    verify: jest.fn().mockReturnValue(
+      opts.qrVerify === undefined
+        ? {
+            sessionId: 's1',
+            roomId: 'r1',
+            courseId: 'c1',
+            timeWindow: 1,
+            ageSeconds: 5,
+          }
+        : opts.qrVerify,
+    ),
     buildPayload: jest.fn().mockReturnValue({ token: 't1', payload: '{}', expiresAt: new Date() }),
   } as unknown as QrTokenService;
 
@@ -35,8 +54,10 @@ function setup(opts: {
   } as unknown as GpsService;
 
   const gateway = {
-    emitAttendance: jest.fn(), emitCount: jest.fn(),
-    emitQrRefresh: jest.fn(), emitTimeout: jest.fn(),
+    emitAttendance: jest.fn(),
+    emitCount: jest.fn(),
+    emitQrRefresh: jest.fn(),
+    emitTimeout: jest.fn(),
   } as unknown as AttendanceGateway;
 
   const redis = {
@@ -69,7 +90,12 @@ function setup(opts: {
 
   return {
     svc: new AttendanceService(prisma, redis, qr, gps, gateway, atRiskQueue),
-    qr, gps, gateway, redis, prisma, atRiskQueue,
+    qr,
+    gps,
+    gateway,
+    redis,
+    prisma,
+    atRiskQueue,
   };
 }
 
@@ -90,30 +116,30 @@ const goodSession = {
 describe('AttendanceService.scan — 5-step verification', () => {
   it('Step 1: rejects bad QR with QR_INVALID', async () => {
     const { svc } = setup({ qrVerify: null, qrCodeRow: null });
-    await expect(
-      svc.scan('uni1', studentPrincipal, { payload: '{}' }),
-    ).rejects.toMatchObject({ code: ErrorCodes.QR_INVALID });
+    await expect(svc.scan('uni1', studentPrincipal, { payload: '{}' })).rejects.toMatchObject({
+      code: ErrorCodes.QR_INVALID,
+    });
   });
 
   it('Step 1: rejects expired QR with QR_EXPIRED when token was previously valid', async () => {
     const { svc } = setup({ qrVerify: null, qrCodeRow: { id: 'q1' } });
-    await expect(
-      svc.scan('uni1', studentPrincipal, { payload: '{}' }),
-    ).rejects.toMatchObject({ code: ErrorCodes.QR_EXPIRED });
+    await expect(svc.scan('uni1', studentPrincipal, { payload: '{}' })).rejects.toMatchObject({
+      code: ErrorCodes.QR_EXPIRED,
+    });
   });
 
   it('Step 2/3: rejects when session not found', async () => {
     const { svc } = setup({ session: null });
-    await expect(
-      svc.scan('uni1', studentPrincipal, { payload: '{}' }),
-    ).rejects.toMatchObject({ code: ErrorCodes.SESSION_NOT_FOUND });
+    await expect(svc.scan('uni1', studentPrincipal, { payload: '{}' })).rejects.toMatchObject({
+      code: ErrorCodes.SESSION_NOT_FOUND,
+    });
   });
 
   it('Step 3: rejects when session is closed', async () => {
     const { svc } = setup({ session: { ...goodSession, status: 'closed' } });
-    await expect(
-      svc.scan('uni1', studentPrincipal, { payload: '{}' }),
-    ).rejects.toMatchObject({ code: ErrorCodes.SESSION_CLOSED });
+    await expect(svc.scan('uni1', studentPrincipal, { payload: '{}' })).rejects.toMatchObject({
+      code: ErrorCodes.SESSION_CLOSED,
+    });
   });
 
   it('Step 2: rejects when student not in section (NOT_ENROLLED)', async () => {
@@ -121,9 +147,9 @@ describe('AttendanceService.scan — 5-step verification', () => {
       session: goodSession,
       enrolledStudent: { id: 'stu1', sectionId: 'someoneelse' },
     });
-    await expect(
-      svc.scan('uni1', studentPrincipal, { payload: '{}' }),
-    ).rejects.toMatchObject({ code: ErrorCodes.NOT_ENROLLED });
+    await expect(svc.scan('uni1', studentPrincipal, { payload: '{}' })).rejects.toMatchObject({
+      code: ErrorCodes.NOT_ENROLLED,
+    });
   });
 
   it('Step 4: rejects when GPS is required but missing', async () => {
@@ -131,9 +157,9 @@ describe('AttendanceService.scan — 5-step verification', () => {
       session: goodSession,
       enrolledStudent: { id: 'stu1', sectionId: 'sec1' },
     });
-    await expect(
-      svc.scan('uni1', studentPrincipal, { payload: '{}' }),
-    ).rejects.toMatchObject({ code: ErrorCodes.GPS_UNAVAILABLE });
+    await expect(svc.scan('uni1', studentPrincipal, { payload: '{}' })).rejects.toMatchObject({
+      code: ErrorCodes.GPS_UNAVAILABLE,
+    });
   });
 
   it('Step 4: rejects when GPS is out of range', async () => {
@@ -164,13 +190,11 @@ describe('AttendanceService.scan — 5-step verification', () => {
       enrolledStudent: { id: 'stu1', sectionId: 'sec1' },
     });
     await svc.scan('uni1', studentPrincipal, {
-      payload: '{}', gpsLat: 30.0, gpsLng: 31.0,
+      payload: '{}',
+      gpsLat: 30.0,
+      gpsLng: 31.0,
     });
-    expect((redis as any).setNxEx).toHaveBeenCalledWith(
-      'attendance:s1:stu1',
-      '1',
-      86_400,
-    );
+    expect((redis as any).setNxEx).toHaveBeenCalledWith('attendance:s1:stu1', '1', 86_400);
     // Should NOT use the racy GET → SETEX pair anymore.
     expect((redis as any).setex).not.toHaveBeenCalled();
   });
@@ -181,13 +205,19 @@ describe('AttendanceService.scan — 5-step verification', () => {
       enrolledStudent: { id: 'stu1', sectionId: 'sec1' },
     });
     const r = await svc.scan('uni1', studentPrincipal, {
-      payload: '{}', gpsLat: 30.0, gpsLng: 31.0,
+      payload: '{}',
+      gpsLat: 30.0,
+      gpsLng: 31.0,
     });
     expect(r.status).toBe('present');
     expect(prisma.attendanceRecord.upsert).toHaveBeenCalled();
-    expect(gateway.emitAttendance).toHaveBeenCalledWith('s1', expect.objectContaining({
-      studentId: 'stu1', status: 'present',
-    }));
+    expect(gateway.emitAttendance).toHaveBeenCalledWith(
+      's1',
+      expect.objectContaining({
+        studentId: 'stu1',
+        status: 'present',
+      }),
+    );
   });
 
   it('marks late when scanned past lateAfterMinutes window', async () => {
@@ -200,7 +230,9 @@ describe('AttendanceService.scan — 5-step verification', () => {
       enrolledStudent: { id: 'stu1', sectionId: 'sec1' },
     });
     const r = await svc.scan('uni1', studentPrincipal, {
-      payload: '{}', gpsLat: 30.0, gpsLng: 31.0,
+      payload: '{}',
+      gpsLat: 30.0,
+      gpsLng: 31.0,
     });
     expect(r.status).toBe('late');
   });
@@ -223,7 +255,10 @@ describe('AttendanceService.scan — 5-step verification', () => {
 describe('AttendanceService.endSession', () => {
   it('enqueues an at-risk check after closing the session', async () => {
     const doctorPrincipal: AuthPrincipal = {
-      userId: 'doc1', role: 'doctor', universityId: 'uni1', email: 'doc@x.com',
+      userId: 'doc1',
+      role: 'doctor',
+      universityId: 'uni1',
+      email: 'doc@x.com',
     };
     const session = {
       id: 's1',
@@ -235,9 +270,7 @@ describe('AttendanceService.endSession', () => {
     (prisma.attendanceSession as any).update = jest
       .fn()
       .mockResolvedValue({ ...session, status: 'closed' });
-    (prisma.attendanceSession as any).findUniqueOrThrow = jest
-      .fn()
-      .mockResolvedValue(session);
+    (prisma.attendanceSession as any).findUniqueOrThrow = jest.fn().mockResolvedValue(session);
 
     await svc.endSession('uni1', doctorPrincipal, 's1');
 

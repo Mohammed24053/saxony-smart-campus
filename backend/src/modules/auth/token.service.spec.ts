@@ -90,9 +90,7 @@ describe('TokenService', () => {
       const svc = new TokenService(jwt, prisma, config);
       const pair = await svc.rotateRefreshToken(refresh);
       expect(pair.accessToken).toBe('signed-jwt');
-      expect(update).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { id: 'rt1' } }),
-      );
+      expect(update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'rt1' } }));
     });
 
     it('rejects refresh tokens for inactive users', async () => {
@@ -104,7 +102,13 @@ describe('TokenService', () => {
           tokenHash,
           revokedAt: null,
           expiresAt: new Date(Date.now() + 86_400_000),
-          user: { id: 'u1', role: 'admin', universityId: 'uni1', email: 'a@x.com', isActive: false },
+          user: {
+            id: 'u1',
+            role: 'admin',
+            universityId: 'uni1',
+            email: 'a@x.com',
+            isActive: false,
+          },
         },
       ];
       const prisma = {

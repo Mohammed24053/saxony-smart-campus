@@ -1,12 +1,48 @@
 import { Injectable } from '@nestjs/common';
 import { AttendanceStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
+
+const DASHBOARD_CACHE_TTL_S = 30;
+const CHART_CACHE_TTL_S = 120;
 
 @Injectable()
 export class AnalyticsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redis: RedisService,
+  ) {}
+
+  /**
+   * Read-through Redis cache. Expensive aggregate queries (counts across
+   * thousands of attendance records) are cached for a short window so the
+   * dashboard remains snappy even when many tabs are open.
+   */
+  private async cached<T>(key: string, ttlSeconds: number, compute: () => Promise<T>): Promise<T> {
+    const cached = await this.redis.get(key);
+    if (cached) {
+      try {
+        return JSON.parse(cached) as T;
+      } catch {
+        // Fallthrough to recompute on JSON parse failure.
+      }
+    }
+    const value = await compute();
+    try {
+      await this.redis.setex(key, ttlSeconds, JSON.stringify(value));
+    } catch {
+      // Cache write failures must never break the request.
+    }
+    return value;
+  }
 
   async dashboard(universityId: string) {
+    return this.cached(`analytics:dashboard:${universityId}`, DASHBOARD_CACHE_TTL_S, () =>
+      this.computeDashboard(universityId),
+    );
+  }
+
+  private async computeDashboard(universityId: string) {
     const [studentCount, doctorCount, sectionCount, roomCount, atRiskOpen, sessionsToday] =
       await this.prisma.$transaction([
         this.prisma.user.count({
@@ -48,6 +84,12 @@ export class AnalyticsService {
   }
 
   async attendanceChart(universityId: string, days = 14) {
+    return this.cached(`analytics:chart:${universityId}:${days}`, CHART_CACHE_TTL_S, () =>
+      this.computeAttendanceChart(universityId, days),
+    );
+  }
+
+  private async computeAttendanceChart(universityId: string, days: number) {
     const since = new Date();
     since.setDate(since.getDate() - days);
     since.setHours(0, 0, 0, 0);
@@ -58,7 +100,8 @@ export class AnalyticsService {
       },
       select: { status: true, createdAt: true },
     });
-    const buckets: Record<string, { date: string; present: number; late: number; absent: number }> = {};
+    const buckets: Record<string, { date: string; present: number; late: number; absent: number }> =
+      {};
     for (const r of records) {
       const day = r.createdAt.toISOString().slice(0, 10);
       buckets[day] ??= { date: day, present: 0, late: 0, absent: 0 };

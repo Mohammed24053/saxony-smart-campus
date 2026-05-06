@@ -1,4 +1,5 @@
 import { Body, Controller, HttpCode, HttpStatus, Ip, Post, Req } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { IsEmail, IsString, MinLength } from 'class-validator';
@@ -25,6 +26,7 @@ export class PasswordResetController {
   constructor(private readonly svc: PasswordResetService) {}
 
   @Public()
+  @Throttle({ short: { limit: 3, ttl: 60_000 }, medium: { limit: 10, ttl: 3_600_000 } })
   @Post('forgot')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Send a password-reset email if the address exists.' })
@@ -34,6 +36,7 @@ export class PasswordResetController {
   }
 
   @Public()
+  @Throttle({ short: { limit: 5, ttl: 60_000 }, medium: { limit: 20, ttl: 3_600_000 } })
   @Post('reset')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Confirm a password reset with the token from email.' })

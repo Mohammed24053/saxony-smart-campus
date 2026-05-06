@@ -17,11 +17,20 @@ export interface CreateLeaveRequestInput {
 
 @Injectable()
 export class LeaveRequestsService {
-  constructor(private readonly prisma: PrismaService, private readonly audit: AuditService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+  ) {}
 
-  async createForStudent(universityId: string, studentUserId: string, input: CreateLeaveRequestInput) {
+  async createForStudent(
+    universityId: string,
+    studentUserId: string,
+    input: CreateLeaveRequestInput,
+  ) {
     if (input.endsAt < input.startsAt)
-      throw new AppException(ErrorCodes.VALIDATION_ERROR, { message: 'endsAt must be after startsAt' });
+      throw new AppException(ErrorCodes.VALIDATION_ERROR, {
+        message: 'endsAt must be after startsAt',
+      });
     const lr = await this.prisma.leaveRequest.create({
       data: {
         universityId,
@@ -69,7 +78,11 @@ export class LeaveRequestsService {
     return paginate(rows, total, page, pageSize);
   }
 
-  async listForStudent(studentUserId: string, page: number, pageSize: number): Promise<Paginated<unknown>> {
+  async listForStudent(
+    studentUserId: string,
+    page: number,
+    pageSize: number,
+  ): Promise<Paginated<unknown>> {
     const where: Prisma.LeaveRequestWhereInput = { studentId: studentUserId };
     const [total, rows] = await this.prisma.$transaction([
       this.prisma.leaveRequest.count({ where }),

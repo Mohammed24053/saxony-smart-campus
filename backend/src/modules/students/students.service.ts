@@ -74,7 +74,8 @@ export class StudentsService {
 
   async create(universityId: string, dto: CreateStudentDto): Promise<StudentRow> {
     const existing = await this.prisma.student.findUnique({ where: { studentId: dto.studentId } });
-    if (existing) throw new AppException(ErrorCodes.CONFLICT, { message: 'studentId already exists' });
+    if (existing)
+      throw new AppException(ErrorCodes.CONFLICT, { message: 'studentId already exists' });
     if (dto.email) {
       const e = await this.prisma.user.findUnique({ where: { email: dto.email } });
       if (e) throw new AppException(ErrorCodes.CONFLICT, { message: 'email already exists' });
@@ -190,9 +191,20 @@ export class StudentsService {
     return `${studentId}!Pass`;
   }
 
-  private shape(u: { id: string; name: string; email: string | null; phone: string | null;
-    isActive: boolean; createdAt: Date; student: { studentId: string; faculty: string | null;
-    year: number | null; sectionId: string | null } | null; }): StudentRow {
+  private shape(u: {
+    id: string;
+    name: string;
+    email: string | null;
+    phone: string | null;
+    isActive: boolean;
+    createdAt: Date;
+    student: {
+      studentId: string;
+      faculty: string | null;
+      year: number | null;
+      sectionId: string | null;
+    } | null;
+  }): StudentRow {
     return {
       id: u.id,
       studentId: u.student?.studentId ?? '',

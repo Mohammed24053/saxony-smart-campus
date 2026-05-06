@@ -14,7 +14,9 @@ export class AtRiskProcessor {
   constructor(private readonly atRisk: AtRiskService) {}
 
   @Process('check-absences')
-  async handleCheckAbsences(job: Job<CheckAbsencesJob>): Promise<{ created: number; notified: number }> {
+  async handleCheckAbsences(
+    job: Job<CheckAbsencesJob>,
+  ): Promise<{ created: number; notified: number }> {
     this.logger.log(`Processing check-absences for session ${job.data.sessionId}`);
     return this.atRisk.runCheck(job.data.sessionId);
   }

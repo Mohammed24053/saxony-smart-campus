@@ -49,7 +49,8 @@ describe('planSchedule', () => {
     const slots = r.slots;
     for (let i = 0; i < slots.length; i++) {
       for (let j = i + 1; j < slots.length; j++) {
-        const a = slots[i], b = slots[j];
+        const a = slots[i],
+          b = slots[j];
         if (a.roomId === b.roomId && a.dayOfWeek === b.dayOfWeek) {
           expect(a.startMin >= b.endMin || b.startMin >= a.endMin).toBe(true);
         }

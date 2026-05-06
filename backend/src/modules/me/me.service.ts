@@ -36,12 +36,18 @@ export class MeService {
     return safe;
   }
 
-  async updateProfile(userId: string, input: UpdateProfileInput, meta: { ip?: string; ua?: string } = {}) {
+  async updateProfile(
+    userId: string,
+    input: UpdateProfileInput,
+    meta: { ip?: string; ua?: string } = {},
+  ) {
     const before = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!before) throw new AppException(ErrorCodes.NOT_FOUND);
     const data: { name?: string; phone?: string | null } = {};
-    if (typeof input.name === 'string' && input.name.trim().length > 0) data.name = input.name.trim();
-    if (typeof input.phone === 'string') data.phone = input.phone.trim() === '' ? null : input.phone.trim();
+    if (typeof input.name === 'string' && input.name.trim().length > 0)
+      data.name = input.name.trim();
+    if (typeof input.phone === 'string')
+      data.phone = input.phone.trim() === '' ? null : input.phone.trim();
     const after = await this.prisma.user.update({ where: { id: userId }, data });
     await this.audit.record({
       universityId: after.universityId,
@@ -65,11 +71,14 @@ export class MeService {
     meta: { ip?: string; ua?: string } = {},
   ) {
     if (newPassword.length < 8)
-      throw new AppException(ErrorCodes.VALIDATION_ERROR, { message: 'Password must be at least 8 characters' });
+      throw new AppException(ErrorCodes.VALIDATION_ERROR, {
+        message: 'Password must be at least 8 characters',
+      });
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new AppException(ErrorCodes.NOT_FOUND);
     const ok = await bcrypt.compare(currentPassword, user.passwordHash);
-    if (!ok) throw new AppException(ErrorCodes.UNAUTHORIZED, { message: 'Current password incorrect' });
+    if (!ok)
+      throw new AppException(ErrorCodes.UNAUTHORIZED, { message: 'Current password incorrect' });
     const passwordHash = await bcrypt.hash(newPassword, 10);
     await this.prisma.user.update({ where: { id: userId }, data: { passwordHash } });
     await this.tokens.revokeAllForUser(userId);

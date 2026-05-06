@@ -19,9 +19,15 @@ export class LoginDto {
 }
 
 export class RefreshTokenDto {
-  @ApiProperty()
+  /**
+   * The refresh token. Optional in the request body — when omitted, the
+   * server falls back to the `refreshToken` HttpOnly cookie set by `/login`.
+   * Mobile clients (which can't carry cookies) keep using the body.
+   */
+  @ApiProperty({ required: false })
+  @IsOptional()
   @IsString()
-  refreshToken!: string;
+  refreshToken?: string;
 }
 
 export class TwoFaVerifyDto {

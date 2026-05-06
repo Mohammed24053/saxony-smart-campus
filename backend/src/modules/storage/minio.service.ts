@@ -33,8 +33,14 @@ export class MinioService implements OnModuleInit {
     }
   }
 
-  async putObject(key: string, body: Buffer, contentType = 'application/octet-stream'): Promise<void> {
-    await this.client.putObject(this.bucket, key, body, body.length, { 'Content-Type': contentType });
+  async putObject(
+    key: string,
+    body: Buffer,
+    contentType = 'application/octet-stream',
+  ): Promise<void> {
+    await this.client.putObject(this.bucket, key, body, body.length, {
+      'Content-Type': contentType,
+    });
   }
 
   async getPresignedUrl(key: string, expirySeconds = 3600): Promise<string> {

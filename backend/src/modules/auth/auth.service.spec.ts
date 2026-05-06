@@ -7,12 +7,14 @@ import { ErrorCodes } from '../../common/errors/error-codes';
 
 const hashed = (pw: string) => bcrypt.hashSync(pw, 4);
 
-function makeService(overrides: {
-  user?: unknown;
-  twoFaEnabled?: boolean;
-  twoFaValid?: boolean;
-  rateLimitOk?: boolean;
-} = {}) {
+function makeService(
+  overrides: {
+    user?: unknown;
+    twoFaEnabled?: boolean;
+    twoFaValid?: boolean;
+    rateLimitOk?: boolean;
+  } = {},
+) {
   const prisma = {
     user: {
       findUnique: jest.fn().mockResolvedValue(overrides.user ?? null),
@@ -25,8 +27,10 @@ function makeService(overrides: {
 
   const tokens = {
     issuePair: jest.fn().mockResolvedValue({
-      accessToken: 'a', refreshToken: 'r',
-      accessTokenExpiresIn: '15m', refreshTokenExpiresIn: '7d',
+      accessToken: 'a',
+      refreshToken: 'r',
+      accessTokenExpiresIn: '15m',
+      refreshTokenExpiresIn: '7d',
     }),
     rotateRefreshToken: jest.fn(),
     revokeRefreshToken: jest.fn(),
@@ -44,8 +48,14 @@ describe('AuthService.login', () => {
   it('issues a token pair on valid student credentials', async () => {
     const { svc } = makeService({
       user: {
-        id: 'u1', email: 'stu@x.com', passwordHash: hashed('pass1234'),
-        role: 'student', universityId: 'uni1', isActive: true, deletedAt: null, name: 'Stu',
+        id: 'u1',
+        email: 'stu@x.com',
+        passwordHash: hashed('pass1234'),
+        role: 'student',
+        universityId: 'uni1',
+        isActive: true,
+        deletedAt: null,
+        name: 'Stu',
       },
     });
     const dto: LoginDto = { email: 'stu@x.com', password: 'pass1234' };
@@ -64,8 +74,14 @@ describe('AuthService.login', () => {
   it('rejects wrong passwords with INVALID_CREDENTIALS', async () => {
     const { svc } = makeService({
       user: {
-        id: 'u1', email: 'a@x.com', passwordHash: hashed('correct'),
-        role: 'admin', universityId: 'uni1', isActive: true, deletedAt: null, name: 'A',
+        id: 'u1',
+        email: 'a@x.com',
+        passwordHash: hashed('correct'),
+        role: 'admin',
+        universityId: 'uni1',
+        isActive: true,
+        deletedAt: null,
+        name: 'A',
       },
     });
     await expect(svc.login({ email: 'a@x.com', password: 'wrong' })).rejects.toMatchObject({
@@ -76,8 +92,14 @@ describe('AuthService.login', () => {
   it('demands 2FA for admins with 2FA enabled but no code', async () => {
     const { svc } = makeService({
       user: {
-        id: 'u1', email: 'a@x.com', passwordHash: hashed('pw'),
-        role: 'admin', universityId: 'uni1', isActive: true, deletedAt: null, name: 'A',
+        id: 'u1',
+        email: 'a@x.com',
+        passwordHash: hashed('pw'),
+        role: 'admin',
+        universityId: 'uni1',
+        isActive: true,
+        deletedAt: null,
+        name: 'A',
       },
       twoFaEnabled: true,
     });
@@ -89,8 +111,14 @@ describe('AuthService.login', () => {
   it('rejects bad 2FA codes with TWO_FA_INVALID', async () => {
     const { svc } = makeService({
       user: {
-        id: 'u1', email: 'a@x.com', passwordHash: hashed('pw'),
-        role: 'admin', universityId: 'uni1', isActive: true, deletedAt: null, name: 'A',
+        id: 'u1',
+        email: 'a@x.com',
+        passwordHash: hashed('pw'),
+        role: 'admin',
+        universityId: 'uni1',
+        isActive: true,
+        deletedAt: null,
+        name: 'A',
       },
       twoFaEnabled: true,
       twoFaValid: false,
@@ -103,8 +131,14 @@ describe('AuthService.login', () => {
   it('admits valid admin + 2FA combo', async () => {
     const { svc } = makeService({
       user: {
-        id: 'u1', email: 'a@x.com', passwordHash: hashed('pw'),
-        role: 'admin', universityId: 'uni1', isActive: true, deletedAt: null, name: 'A',
+        id: 'u1',
+        email: 'a@x.com',
+        passwordHash: hashed('pw'),
+        role: 'admin',
+        universityId: 'uni1',
+        isActive: true,
+        deletedAt: null,
+        name: 'A',
       },
       twoFaEnabled: true,
       twoFaValid: true,
@@ -115,16 +149,24 @@ describe('AuthService.login', () => {
 
   it('rejects login when rate limit exceeded', async () => {
     const { svc } = makeService({ rateLimitOk: false });
-    await expect(svc.login({ email: 'a', password: 'b' }, { ip: '1.1.1.1' })).rejects.toMatchObject({
-      code: ErrorCodes.RATE_LIMITED,
-    });
+    await expect(svc.login({ email: 'a', password: 'b' }, { ip: '1.1.1.1' })).rejects.toMatchObject(
+      {
+        code: ErrorCodes.RATE_LIMITED,
+      },
+    );
   });
 
   it('rejects login for inactive users', async () => {
     const { svc } = makeService({
       user: {
-        id: 'u1', email: 'a@x.com', passwordHash: hashed('pw'),
-        role: 'admin', universityId: 'uni1', isActive: false, deletedAt: null, name: 'A',
+        id: 'u1',
+        email: 'a@x.com',
+        passwordHash: hashed('pw'),
+        role: 'admin',
+        universityId: 'uni1',
+        isActive: false,
+        deletedAt: null,
+        name: 'A',
       },
     });
     await expect(svc.login({ email: 'a@x.com', password: 'pw' })).rejects.toMatchObject({

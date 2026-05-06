@@ -1,21 +1,25 @@
-'use client';
+"use client";
 
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { api, getRefreshToken, setTokens } from './api';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { api, setTokens } from "./api";
 
 export type AuthUser = {
   id: string;
   email: string;
   name: string;
-  role: 'admin' | 'student' | 'doctor';
+  role: "admin" | "student" | "doctor";
   universityId: string;
 };
 
 type State = {
   user: AuthUser | null;
   hydrated: boolean;
-  login: (email: string, password: string, twoFactorCode?: string) => Promise<{ requires2fa?: boolean }>;
+  login: (
+    email: string,
+    password: string,
+    twoFactorCode?: string,
+  ) => Promise<{ requires2fa?: boolean }>;
   logout: () => Promise<void>;
 };
 
@@ -26,30 +30,40 @@ export const useAuth = create<State>()(
       hydrated: false,
       async login(email, password, twoFactorCode) {
         try {
-          const r = await api.post('/auth/login', { email, password, twoFactorCode });
+          const r = await api.post("/auth/login", {
+            email,
+            password,
+            twoFactorCode,
+          });
           const data = r.data?.data ?? r.data;
-          setTokens(data.accessToken, data.refreshToken);
+          // Refresh token now travels in an HttpOnly cookie set by the
+          // backend's Set-Cookie response — JS only ever sees the access
+          // token, which we keep in memory.
+          setTokens(data.accessToken ?? null);
           set({ user: data.user });
           return {};
-        } catch (e: any) {
-          const code = e?.response?.data?.error?.code;
-          if (code === 'TWO_FA_REQUIRED') return { requires2fa: true };
+        } catch (e: unknown) {
+          const code = (
+            e as { response?: { data?: { error?: { code?: string } } } }
+          )?.response?.data?.error?.code;
+          if (code === "TWO_FA_REQUIRED") return { requires2fa: true };
           throw e;
         }
       },
       async logout() {
-        const refreshToken = getRefreshToken();
         try {
-          if (refreshToken) {
-            await api.post('/auth/logout', { refreshToken });
-          }
-        } catch {/* ignore */}
-        setTokens(null, null);
+          // Empty body — server reads the refresh cookie. `withCredentials`
+          // is set globally on the axios instance.
+          await api.post("/auth/logout", {});
+        } catch {
+          /* ignore — we still clear local state below */
+        }
+        setTokens(null);
         set({ user: null });
       },
     }),
     {
-      name: 'admin-auth',
+      name: "admin-auth",
       onRehydrateStorage: () => (s) => {
         s?.hydrated;
       },

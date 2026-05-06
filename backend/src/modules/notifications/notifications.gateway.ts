@@ -28,12 +28,18 @@ export class NotificationsGateway implements OnGatewayConnection {
   }
 
   @SubscribeMessage('user:subscribe')
-  onSubscribe(@MessageBody() body: SubscribePayload, @ConnectedSocket() client: Socket): { ok: true } {
+  onSubscribe(
+    @MessageBody() body: SubscribePayload,
+    @ConnectedSocket() client: Socket,
+  ): { ok: true } {
     client.join(`user:${body.userId}`);
     return { ok: true };
   }
 
-  emitNew(userId: string, payload: { id: string; type: string; title: string; body: string; sentAt: string }): void {
+  emitNew(
+    userId: string,
+    payload: { id: string; type: string; title: string; body: string; sentAt: string },
+  ): void {
     this.server?.to(`user:${userId}`).emit('notification:new', payload);
   }
 }

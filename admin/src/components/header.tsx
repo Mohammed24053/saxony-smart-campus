@@ -1,14 +1,24 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, LogOut, Search, User as UserIcon, Rows3, Rows4, Languages, Moon, Sun } from 'lucide-react';
-import { useAuth } from '@/lib/auth-store';
-import { Input } from '@/components/ui';
-import { cn } from '@/lib/utils';
-import { useT } from '@/i18n/i18n';
-import { useTheme } from '@/components/theme-provider';
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Bell,
+  LogOut,
+  Search,
+  User as UserIcon,
+  Rows3,
+  Rows4,
+  Languages,
+  Moon,
+  Sun,
+} from "lucide-react";
+import { useAuth } from "@/lib/auth-store";
+import { Input } from "@/components/ui";
+import { cn } from "@/lib/utils";
+import { useT } from "@/i18n/i18n";
+import { useTheme } from "@/components/theme-provider";
 
 /**
  * Top header bar (round 2 — Linear-style 56px dense).
@@ -28,30 +38,31 @@ export function Header() {
 
   // Read persisted density preference once on mount.
   useEffect(() => {
-    const v = typeof window !== 'undefined' ? localStorage.getItem('density') : null;
-    if (v === 'compact') {
+    const v =
+      typeof window !== "undefined" ? localStorage.getItem("density") : null;
+    if (v === "compact") {
       setCompact(true);
-      document.documentElement.dataset.density = 'compact';
+      document.documentElement.dataset.density = "compact";
     }
   }, []);
 
   function toggleDensity() {
     setCompact((c) => {
       const next = !c;
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         if (next) {
-          document.documentElement.dataset.density = 'compact';
-          localStorage.setItem('density', 'compact');
+          document.documentElement.dataset.density = "compact";
+          localStorage.setItem("density", "compact");
         } else {
           delete document.documentElement.dataset.density;
-          localStorage.removeItem('density');
+          localStorage.removeItem("density");
         }
       }
       return next;
     });
   }
 
-  const initial = (user?.email ?? 'A').slice(0, 1).toUpperCase();
+  const initial = (user?.email ?? "A").slice(0, 1).toUpperCase();
 
   return (
     <header className="sticky top-0 z-30 flex h-header items-center gap-3 border-b border-border bg-card/85 px-4 backdrop-blur">
@@ -59,14 +70,17 @@ export function Header() {
         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
           type="search"
-          placeholder={t('common.search')}
+          placeholder={t("common.search")}
           onFocus={() => {
-            const ev = new KeyboardEvent('keydown', { key: 'k', metaKey: true });
+            const ev = new KeyboardEvent("keydown", {
+              key: "k",
+              metaKey: true,
+            });
             window.dispatchEvent(ev);
           }}
           readOnly
           className="h-8 pl-8 text-[13px]"
-          aria-label="Global search"
+          aria-label={t("common.globalSearch")}
         />
         <kbd className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 rounded border border-border bg-muted px-1 py-px font-mono text-[10px] text-muted-foreground sm:inline-block">
           ⌘K
@@ -74,33 +88,61 @@ export function Header() {
       </div>
       <div className="flex items-center gap-1">
         <button
-          aria-label={locale === 'ar' ? 'Switch to English' : 'الترجمة العربية'}
-          onClick={() => setLocale(locale === 'ar' ? 'en' : 'ar')}
-          title={locale === 'ar' ? 'EN' : 'AR'}
+          aria-label={
+            locale === "ar"
+              ? t("common.switchToEnglish")
+              : t("common.switchToArabic")
+          }
+          onClick={() => setLocale(locale === "ar" ? "en" : "ar")}
+          title={locale === "ar" ? "EN" : "AR"}
           className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <Languages className="h-3.5 w-3.5" />
           <span className="font-mono">{locale.toUpperCase()}</span>
         </button>
         <button
-          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          aria-label={
+            theme === "dark"
+              ? t("common.switchToLight")
+              : t("common.switchToDark")
+          }
           onClick={toggleTheme}
-          title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+          title={
+            theme === "dark"
+              ? t("common.switchToLight")
+              : t("common.switchToDark")
+          }
           className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
-          {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          {theme === "dark" ? (
+            <Sun className="h-4 w-4" />
+          ) : (
+            <Moon className="h-4 w-4" />
+          )}
         </button>
         <button
-          aria-label={compact ? 'Comfortable density' : 'Compact density'}
+          aria-label={
+            compact
+              ? t("common.comfortableDensity")
+              : t("common.compactDensity")
+          }
           onClick={toggleDensity}
-          title={compact ? 'Switch to comfortable density' : 'Switch to compact density'}
+          title={
+            compact
+              ? t("common.comfortableDensity")
+              : t("common.compactDensity")
+          }
           className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
-          {compact ? <Rows3 className="h-4 w-4" /> : <Rows4 className="h-4 w-4" />}
+          {compact ? (
+            <Rows3 className="h-4 w-4" />
+          ) : (
+            <Rows4 className="h-4 w-4" />
+          )}
         </button>
         <button
-          aria-label="Notifications"
-          onClick={() => router.push('/notifications')}
+          aria-label={t("common.notifications")}
+          onClick={() => router.push("/notifications")}
           className="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <Bell className="h-4 w-4" />
@@ -119,7 +161,7 @@ export function Header() {
               {initial}
             </span>
             <span className="text-xs font-medium hidden sm:block max-w-[14ch] truncate">
-              {user?.email ?? 'admin'}
+              {user?.email ?? "admin"}
             </span>
           </button>
 
@@ -131,7 +173,7 @@ export function Header() {
                 exit={{ opacity: 0, y: -4, scale: 0.96 }}
                 transition={{ duration: 0.15 }}
                 className={cn(
-                  'absolute right-0 top-full mt-2 w-44 rounded-md border border-border bg-card p-1 text-sm shadow-card-lift',
+                  "absolute right-0 top-full mt-2 w-44 rounded-md border border-border bg-card p-1 text-sm shadow-card-lift",
                 )}
                 onMouseLeave={() => setMenuOpen(false)}
                 role="menu"
@@ -139,23 +181,23 @@ export function Header() {
                 <button
                   onClick={() => {
                     setMenuOpen(false);
-                    router.push('/profile');
+                    router.push("/profile");
                   }}
                   className="flex w-full items-center gap-2 rounded-sm px-2.5 py-1.5 text-left text-xs hover:bg-muted"
                   role="menuitem"
                 >
-                  <UserIcon className="h-3.5 w-3.5" /> {t('nav.profile')}
+                  <UserIcon className="h-3.5 w-3.5" /> {t("nav.profile")}
                 </button>
                 <button
                   onClick={async () => {
                     setMenuOpen(false);
                     await logout();
-                    router.push('/login');
+                    router.push("/login");
                   }}
                   className="flex w-full items-center gap-2 rounded-sm px-2.5 py-1.5 text-left text-xs text-seu-red hover:bg-seu-red/10"
                   role="menuitem"
                 >
-                  <LogOut className="h-3.5 w-3.5" /> {t('auth.logout')}
+                  <LogOut className="h-3.5 w-3.5" /> {t("auth.logout")}
                 </button>
               </motion.div>
             )}

@@ -100,9 +100,10 @@
   html, body { height: 100%; }
   body {
     @apply bg-background text-foreground;
-    /* Denser body text: 13px is the Linear default */
-    font-size: 13px;
-    line-height: 1.5;
+    /* Body text: bumped from 13px → 14px to clear the WCAG legibility floor.
+       Still tight enough for an admin tool; lg/xl scale is unchanged. */
+    font-size: 14px;
+    line-height: 1.55;
     font-feature-settings: 'cv11', 'ss01', 'ss03';
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
@@ -111,6 +112,16 @@
   /* Visible focus ring across the app — accessibility. */
   :focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /* Coarse-pointer (mobile/tablet) bumps interactive surfaces to 44px so the
+     dense desktop layout still hits the WCAG AA touch-target floor. */
+  @media (pointer: coarse) {
+    button,
+    [role='button'],
+    a {
+      min-height: 44px;
+    }
   }
 
   /* Tabular numerals everywhere — prevents KPI flicker mid-count-up. */

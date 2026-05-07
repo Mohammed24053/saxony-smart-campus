@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/auth_state.dart';
+import '../../core/strings.dart';
 import '../../theme/app_theme.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -73,6 +74,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final s = AppStrings.of(context);
     return Scaffold(
       backgroundColor: SeuColors.cream,
       body: SafeArea(
@@ -119,14 +121,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const SizedBox(height: 16),
                 Center(
                   child: Text(
-                    'Smart Campus',
+                    s.t('auth.appName'),
                     style: theme.textTheme.headlineLarge,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Center(
                   child: Text(
-                    'Saxony Egypt University',
+                    s.t('auth.appTagline'),
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: SeuColors.gray,
                     ),
@@ -169,26 +171,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             strokeWidth: 2.5,
                           ),
                         )
-                      : Text(_needs2fa ? 'Verify code' : 'Sign in'),
+                      : Text(_needs2fa
+                          ? s.t('auth.verifyCode')
+                          : s.t('auth.signIn')),
                 ),
                 if (!_needs2fa) ...[
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Biometric sign-in coming soon'),
+                        SnackBar(
+                          content: Text(s.t('auth.biometricComingSoon')),
                         ),
                       );
                     },
                     icon: const Icon(Icons.fingerprint),
-                    label: const Text('Sign in with biometrics'),
+                    label: Text(s.t('auth.biometric')),
                   ),
                   const SizedBox(height: 8),
                   Center(
                     child: TextButton(
                       onPressed: () => context.go('/forgot-password'),
-                      child: const Text('Forgot password?'),
+                      child: Text(s.t('auth.forgotPassword')),
                     ),
                   ),
                 ],
@@ -208,6 +212,13 @@ class _RoleToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
+    // Display labels are localised; the canonical state value stays English
+    // so it can be sent to the backend / used in role-based routing.
+    final options = <(String, String)>[
+      ('Student', s.t('auth.role.student')),
+      ('Doctor', s.t('auth.role.doctor')),
+    ];
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
@@ -216,18 +227,20 @@ class _RoleToggle extends StatelessWidget {
       ),
       child: Row(
         children: [
-          for (final option in const ['Student', 'Doctor'])
+          for (final option in options)
             Expanded(
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: () => onChanged(option),
+                onTap: () => onChanged(option.$1),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 220),
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   decoration: BoxDecoration(
-                    color: value == option ? SeuColors.white : Colors.transparent,
+                    color: value == option.$1
+                        ? SeuColors.white
+                        : Colors.transparent,
                     borderRadius: SeuRadius.xlR,
-                    boxShadow: value == option
+                    boxShadow: value == option.$1
                         ? [
                             BoxShadow(
                               color: SeuColors.navy.withOpacity(0.06),
@@ -238,9 +251,9 @@ class _RoleToggle extends StatelessWidget {
                   ),
                   child: Center(
                     child: Text(
-                      option,
+                      option.$2,
                       style: TextStyle(
-                        color: value == option
+                        color: value == option.$1
                             ? SeuColors.navy
                             : SeuColors.gray,
                         fontWeight: FontWeight.w600,
@@ -271,6 +284,7 @@ class _CredentialsForm extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     final fields = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -279,18 +293,18 @@ class _CredentialsForm extends StatelessWidget {
           keyboardType: TextInputType.emailAddress,
           autocorrect: false,
           textInputAction: TextInputAction.next,
-          decoration: const InputDecoration(
-            labelText: 'Email or Student ID',
-            prefixIcon: Icon(Icons.alternate_email, size: 20),
+          decoration: InputDecoration(
+            labelText: s.t('auth.emailOrStudentId'),
+            prefixIcon: const Icon(Icons.alternate_email, size: 20),
           ),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: password,
           obscureText: true,
-          decoration: const InputDecoration(
-            labelText: 'Password',
-            prefixIcon: Icon(Icons.lock_outline, size: 20),
+          decoration: InputDecoration(
+            labelText: s.t('auth.password'),
+            prefixIcon: const Icon(Icons.lock_outline, size: 20),
           ),
         ),
         if (error != null) ...[
@@ -325,11 +339,12 @@ class _OtpForm extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     final group = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Enter the 6-digit code from your authenticator app',
+          s.t('auth.otpHint'),
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: SeuColors.gray,

@@ -4,6 +4,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/strings.dart';
 import '../../theme/app_theme.dart';
 
 final connectivityProvider = StreamProvider<bool>((ref) async* {
@@ -43,7 +44,7 @@ class OfflineBanner extends ConsumerWidget {
                   const Icon(Icons.wifi_off, size: 18, color: SeuColors.navy),
                   const SizedBox(width: 8),
                   Text(
-                    'Offline · showing cached data',
+                    AppStrings.of(context).t('common.offline'),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: SeuColors.navy,
                           fontWeight: FontWeight.w600,

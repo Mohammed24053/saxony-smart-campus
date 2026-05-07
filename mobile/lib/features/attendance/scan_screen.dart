@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../core/auth_state.dart';
+import '../../core/strings.dart';
 import '../../theme/app_theme.dart';
 
 enum _ScanState { idle, success, gpsOutOfRange, qrExpired, alreadyRegistered, generic }
@@ -65,13 +66,20 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
         if (pos != null) 'gpsLng': pos.longitude,
       });
       final data = r.data['data'] as Map<String, dynamic>;
+      if (!mounted) return;
+      final s = AppStrings.of(context);
       setState(() {
         _state = _ScanState.success;
-        _resultMessage = 'Attendance recorded for ${data['status'] ?? '—'}';
+        _resultMessage = s.fill(
+          'scan.recordedFor',
+          {'status': data['status'] ?? '—'},
+        );
       });
     } catch (e) {
       String code = 'ERROR';
-      String msg = 'Try again';
+      String msg = mounted
+          ? AppStrings.of(context).t('scan.tryAgain')
+          : 'Try again';
       if (e is DioException) {
         final data = e.response?.data;
         if (data is Map) {
@@ -99,7 +107,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('Scan attendance QR'),
+        title: Text(AppStrings.of(context).t('scan.title')),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -139,14 +147,17 @@ class _ScanInstructions extends StatelessWidget {
         color: Colors.black.withOpacity(0.55),
         borderRadius: SeuRadius.xlR,
       ),
-      child: const Row(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.qr_code_scanner, color: SeuColors.gold, size: 20),
-          SizedBox(width: 8),
+          const Icon(Icons.qr_code_scanner, color: SeuColors.gold, size: 20),
+          const SizedBox(width: 8),
           Text(
-            'Point at the QR code on the projector',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+            AppStrings.of(context).t('scan.point'),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
@@ -269,12 +280,33 @@ class _ResultOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     final (color, icon, title) = switch (state) {
-      _ScanState.success => (SeuColors.success, Icons.check_circle, 'Attendance recorded!'),
-      _ScanState.gpsOutOfRange => (SeuColors.danger, Icons.location_off, 'Out of range'),
-      _ScanState.qrExpired => (Colors.orange.shade700, Icons.refresh, 'QR expired'),
-      _ScanState.alreadyRegistered => (SeuColors.info, Icons.check_circle_outline, 'Already registered'),
-      _ScanState.generic => (SeuColors.danger, Icons.error_outline, 'Scan failed'),
+      _ScanState.success => (
+          SeuColors.success,
+          Icons.check_circle,
+          s.t('scan.success'),
+        ),
+      _ScanState.gpsOutOfRange => (
+          SeuColors.danger,
+          Icons.location_off,
+          s.t('scan.outOfRangeShort'),
+        ),
+      _ScanState.qrExpired => (
+          Colors.orange.shade700,
+          Icons.refresh,
+          s.t('scan.expiredShort'),
+        ),
+      _ScanState.alreadyRegistered => (
+          SeuColors.info,
+          Icons.check_circle_outline,
+          s.t('scan.alreadyRegistered'),
+        ),
+      _ScanState.generic => (
+          SeuColors.danger,
+          Icons.error_outline,
+          s.t('scan.failed'),
+        ),
       _ScanState.idle => (SeuColors.gray, Icons.info_outline, '—'),
     };
     return AnimatedContainer(

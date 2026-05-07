@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/strings.dart';
 import '../../theme/app_theme.dart';
 
 /// Splash screen.
@@ -80,7 +81,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   .fade(duration: const Duration(milliseconds: 300)),
               const SizedBox(height: 24),
               Text(
-                'Smart Campus',
+                AppStrings.of(context).t('auth.appName'),
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       color: SeuColors.white,
                       fontWeight: FontWeight.w700,
@@ -100,7 +101,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   ),
               const SizedBox(height: 4),
               Text(
-                'Saxony Egypt University',
+                AppStrings.of(context).t('auth.appTagline'),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: SeuColors.gold,
                       letterSpacing: 0.6,

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/strings.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/seu/live_counter.dart';
 import '../../widgets/seu/qr_display.dart';
@@ -85,13 +86,14 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen>
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     return Scaffold(
       backgroundColor: SeuColors.cream,
       appBar: AppBar(
         title: Text(widget.subject),
         actions: [
           IconButton(
-            tooltip: 'Pause',
+            tooltip: s.t('doctor.pause'),
             icon: const Icon(Icons.pause_circle_outline),
             onPressed: () {},
           ),
@@ -134,9 +136,9 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen>
                         color: SeuColors.success,
                         borderRadius: SeuRadius.xlR,
                       ),
-                      child: const Text(
-                        'LIVE',
-                        style: TextStyle(
+                      child: Text(
+                        s.t('common.live'),
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,
                           fontSize: 11,
@@ -175,7 +177,7 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen>
               ],
             ),
             Text(
-              'Currently present',
+              s.t('doctor.currentlyPresent'),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: SeuColors.gray,
                     letterSpacing: 0.4,
@@ -188,16 +190,17 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen>
               unselectedLabelColor: SeuColors.gray,
               indicatorColor: SeuColors.red,
               tabs: [
-                Tab(text: 'Present (${_present.length})'),
-                Tab(text: 'Absent (${_absent.length})'),
+                Tab(text: s.count('doctor.tabPresent', _present.length)),
+                Tab(text: s.count('doctor.tabAbsent', _absent.length)),
               ],
             ),
             Expanded(
               child: TabBarView(
                 controller: _tab,
                 children: [
-                  _EntryList(items: _present, emptyLabel: 'No scans yet'),
-                  _EntryList(items: _absent, emptyLabel: 'Empty'),
+                  _EntryList(
+                      items: _present, emptyLabel: s.t('doctor.noScansYet')),
+                  _EntryList(items: _absent, emptyLabel: s.t('doctor.empty')),
                 ],
               ),
             ),
@@ -208,7 +211,7 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen>
                 child: FilledButton.icon(
                   icon: const Icon(Icons.stop_circle_outlined),
                   onPressed: () => Navigator.of(context).maybePop(),
-                  label: const Text('End lecture'),
+                  label: Text(s.t('doctor.endLecture')),
                 ),
               ),
             ),

@@ -72,8 +72,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Enter your email — we\'ll send a reset link if your account exists.',
-                  style: TextStyle(color: SeuColors.gray, fontSize: 13),
+                  s.t('auth.forgotPasswordHint'),
+                  style: const TextStyle(color: SeuColors.gray, fontSize: 13),
                 ),
                 const SizedBox(height: 24),
                 if (!_sent) ...[
@@ -118,8 +118,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'If an account exists, a reset email has been sent.',
-                            style: TextStyle(
+                            s.t('auth.forgotPasswordSent'),
+                            style: const TextStyle(
                               fontSize: 13,
                               color: SeuColors.navy,
                             ),

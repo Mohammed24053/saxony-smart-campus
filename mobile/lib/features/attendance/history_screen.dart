@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/auth_state.dart';
+import '../../core/strings.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/seu/attendance_ring.dart';
 import '../../widgets/seu/status_chip.dart';
@@ -68,14 +69,15 @@ class HistoryScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(historyProvider);
+    final s = AppStrings.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Attendance history')),
+      appBar: AppBar(title: Text(s.t('history.title'))),
       body: async.when(
         data: (subjects) {
           if (subjects.isEmpty) {
             return Center(
               child: Text(
-                'No attendance records yet.',
+                s.t('history.empty'),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: SeuColors.gray,
                     ),
@@ -99,7 +101,9 @@ class HistoryScreen extends ConsumerWidget {
         loading: () => const Center(
           child: CircularProgressIndicator(color: SeuColors.red),
         ),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(
+          child: Text(s.fill('common.errorPrefix', {'message': e.toString()})),
+        ),
       ),
     );
   }
@@ -120,6 +124,7 @@ class _SubjectCardState extends State<_SubjectCard> {
   Widget build(BuildContext context) {
     final fmt = DateFormat.yMMMd().add_Hm();
     final atRisk = widget.summary.percent < 0.75;
+    final s = AppStrings.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -146,14 +151,17 @@ class _SubjectCardState extends State<_SubjectCard> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${widget.summary.entries.length} lectures',
+                      s.count(
+                        'history.lectureCount',
+                        widget.summary.entries.length,
+                      ),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     if (atRisk) ...[
                       const SizedBox(height: 6),
-                      const StatusChip(
+                      StatusChip(
                         tone: AttendanceTone.warning1,
-                        label: 'Approaching threshold',
+                        label: s.t('history.approachingThreshold'),
                       ),
                     ],
                   ],

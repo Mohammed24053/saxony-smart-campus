@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/strings.dart';
 import '../../theme/app_theme.dart';
 
 /// A single lecture entry on the student home / schedule pages.
@@ -111,7 +112,7 @@ class _LectureCardState extends State<LectureCard>
                   if (widget.isCurrent) ...[
                     const SizedBox(height: 6),
                     Text(
-                      'In progress · ${widget.time}',
+                      '${AppStrings.of(context).t('home.inProgress')} · ${widget.time}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: SeuColors.success,
                             fontWeight: FontWeight.w600,
@@ -188,9 +189,9 @@ class _LiveDotState extends State<_LiveDot>
             ),
           ),
           const SizedBox(width: 6),
-          const Text(
-            'LIVE',
-            style: TextStyle(
+          Text(
+            AppStrings.of(context).t('common.live'),
+            style: const TextStyle(
               color: SeuColors.success,
               fontWeight: FontWeight.w700,
               fontSize: 11,

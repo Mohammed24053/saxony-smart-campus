@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/strings.dart';
 import '../../theme/app_theme.dart';
 
 enum AttendanceTone { present, late, absent, warning1, warning2, deprivation }
@@ -13,42 +14,43 @@ class StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     final (bg, fg, icon, defaultLabel) = switch (tone) {
       AttendanceTone.present => (
           SeuColors.success.withOpacity(0.12),
           SeuColors.success,
           Icons.check_circle_outline,
-          'Present',
+          s.t('attendance.present'),
         ),
       AttendanceTone.late => (
           SeuColors.gold.withOpacity(0.20),
           const Color(0xFF7A5D10),
           Icons.access_time,
-          'Late',
+          s.t('attendance.late'),
         ),
       AttendanceTone.absent => (
           SeuColors.danger.withOpacity(0.10),
           SeuColors.danger,
           Icons.cancel_outlined,
-          'Absent',
+          s.t('attendance.absent'),
         ),
       AttendanceTone.warning1 => (
           SeuColors.gold.withOpacity(0.20),
           const Color(0xFF7A5D10),
           Icons.warning_amber_rounded,
-          'Warning 1',
+          s.t('attendance.warning1'),
         ),
       AttendanceTone.warning2 => (
           const Color(0xFFF6A03C).withOpacity(0.18),
           const Color(0xFF8B4500),
           Icons.warning_rounded,
-          'Warning 2',
+          s.t('attendance.warning2'),
         ),
       AttendanceTone.deprivation => (
           SeuColors.danger.withOpacity(0.12),
           SeuColors.danger,
           Icons.block,
-          'Deprivation',
+          s.t('attendance.deprivation'),
         ),
     };
     return Container(

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/auth_state.dart';
+import '../../core/strings.dart';
 import '../../theme/app_theme.dart';
 
 final notificationsProvider = FutureProvider<List<dynamic>>((ref) async {
@@ -41,14 +42,17 @@ class NotificationsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(notificationsProvider);
+    final s = AppStrings.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifications'),
+        title: Text(s.t('notifications.title')),
         actions: [
           TextButton(
             onPressed: () {},
-            child: const Text('Mark all read',
-                style: TextStyle(color: SeuColors.gold)),
+            child: Text(
+              s.t('notifications.markAllRead'),
+              style: const TextStyle(color: SeuColors.gold),
+            ),
           ),
         ],
       ),
@@ -94,7 +98,9 @@ class NotificationsScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(
+          child: Text(s.fill('common.errorPrefix', {'message': e.toString()})),
+        ),
       ),
     );
   }
@@ -104,6 +110,7 @@ class _EmptyNotifs extends StatelessWidget {
   const _EmptyNotifs();
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -118,11 +125,13 @@ class _EmptyNotifs extends StatelessWidget {
                 size: 36, color: SeuColors.gold),
           ),
           const SizedBox(height: 12),
-          Text("You're all caught up",
-              style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            s.t('notifications.allCaughtUp'),
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
           const SizedBox(height: 4),
           Text(
-            'New notifications will appear here.',
+            s.t('notifications.newWillAppear'),
             style: Theme.of(context)
                 .textTheme
                 .bodyMedium
@@ -203,7 +212,9 @@ class _NotifCard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          title.isEmpty ? '(no title)' : title,
+                          title.isEmpty
+                              ? AppStrings.of(context).t('notifications.noTitle')
+                              : title,
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                 fontSize: 15,
                               ),

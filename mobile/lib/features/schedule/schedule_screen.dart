@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/auth_state.dart';
+import '../../core/strings.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/seu/lecture_card.dart';
 import '../../widgets/seu/offline_banner.dart';
@@ -21,7 +22,15 @@ class ScheduleScreen extends ConsumerStatefulWidget {
 }
 
 class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
-  static const _days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  static const _dayKeys = [
+    'schedule.day.sun',
+    'schedule.day.mon',
+    'schedule.day.tue',
+    'schedule.day.wed',
+    'schedule.day.thu',
+    'schedule.day.fri',
+    'schedule.day.sat',
+  ];
   int _selectedDay = DateTime.now().weekday % 7;
 
   Color _accentFor(int idx) {
@@ -37,8 +46,9 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
   @override
   Widget build(BuildContext context) {
     final async = ref.watch(scheduleProvider);
+    final s = AppStrings.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('My Schedule')),
+      appBar: AppBar(title: Text(s.t('schedule.title'))),
       body: Column(
         children: [
           const OfflineBanner(),
@@ -50,7 +60,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  for (var i = 0; i < _days.length; i++)
+                  for (var i = 0; i < _dayKeys.length; i++)
                     Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: GestureDetector(
@@ -76,7 +86,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                             boxShadow: SeuShadow.tile,
                           ),
                           child: Text(
-                            _days[i],
+                            s.t(_dayKeys[i]),
                             style: TextStyle(
                               color: _selectedDay == i
                                   ? SeuColors.white
@@ -105,7 +115,8 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                     child: Padding(
                       padding: const EdgeInsets.all(32),
                       child: Text(
-                        'No lectures on ${_days[_selectedDay]}.',
+                        s.fill('schedule.emptyDay',
+                            {'day': s.t(_dayKeys[_selectedDay])}),
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: SeuColors.gray,
                             ),
@@ -150,7 +161,9 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
               },
               loading: () =>
                   const Center(child: CircularProgressIndicator(color: SeuColors.red)),
-              error: (e, _) => Center(child: Text('Error: $e')),
+              error: (e, _) => Center(
+                  child: Text(s.fill('common.errorPrefix',
+                      {'message': e.toString()}))),
             ),
           ),
         ],

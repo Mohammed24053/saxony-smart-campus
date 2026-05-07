@@ -15,8 +15,9 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider);
     final locale = ref.watch(localeProvider);
+    final s = AppStrings.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
+      appBar: AppBar(title: Text(s.t('profile.title'))),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
@@ -92,36 +93,36 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          _SectionLabel('Preferences'),
+          _SectionLabel(s.t('profile.preferences')),
           _SettingsTile(
             leading: Icons.translate,
-            title: 'Language',
+            title: s.t('profile.language'),
             subtitle: locale.languageCode == 'ar' ? 'العربية' : 'English',
             onTap: () => ref.read(localeProvider.notifier).toggle(),
           ),
           _SettingsTile(
             leading: Icons.notifications_outlined,
-            title: 'Notifications',
-            subtitle: 'Manage push, email, and in-app alerts',
+            title: s.t('profile.notifications'),
+            subtitle: s.t('profile.notificationsHint'),
             onTap: () {},
           ),
           _BiometricToggle(),
           const SizedBox(height: 16),
-          _SectionLabel('Account'),
+          _SectionLabel(s.t('profile.account')),
           _SettingsTile(
             leading: Icons.lock_outline,
-            title: 'Change password',
+            title: s.t('profile.changePassword'),
             onTap: () => _showChangePassword(context, ref),
           ),
           _SettingsTile(
             leading: Icons.devices_other,
-            title: 'Log out all devices',
-            subtitle: 'Sign out from every browser and phone',
+            title: s.t('profile.logoutAll'),
+            subtitle: s.t('profile.logoutAllHint'),
             onTap: () => _confirmLogoutAll(context, ref),
           ),
           _SettingsTile(
             leading: Icons.help_outline,
-            title: 'Help & support',
+            title: s.t('profile.helpSupport'),
             onTap: () {},
           ),
           const SizedBox(height: 16),
@@ -135,7 +136,7 @@ class ProfileScreen extends ConsumerWidget {
               await ref.read(authProvider.notifier).logout();
               if (context.mounted) context.go('/login');
             },
-            label: const Text('Sign out'),
+            label: Text(s.t('auth.signOut')),
           ),
         ],
       ),
@@ -176,7 +177,9 @@ Future<void> _showChangePassword(BuildContext context, WidgetRef ref) async {
                 decoration: InputDecoration(
                   labelText: AppStrings.of(sheetCtx).t('profile.currentPassword'),
                 ),
-                validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                validator: (v) => (v == null || v.isEmpty)
+                    ? AppStrings.of(sheetCtx).t('common.required')
+                    : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -185,8 +188,9 @@ Future<void> _showChangePassword(BuildContext context, WidgetRef ref) async {
                 decoration: InputDecoration(
                   labelText: AppStrings.of(sheetCtx).t('profile.newPassword'),
                 ),
-                validator: (v) =>
-                    (v == null || v.length < 8) ? 'Min 8 characters' : null,
+                validator: (v) => (v == null || v.length < 8)
+                    ? AppStrings.of(sheetCtx).t('profile.passwordMin')
+                    : null,
               ),
               const SizedBox(height: 16),
               FilledButton(
@@ -206,8 +210,12 @@ Future<void> _showChangePassword(BuildContext context, WidgetRef ref) async {
                         } catch (e) {
                           if (sheetCtx.mounted) {
                             ScaffoldMessenger.of(sheetCtx).showSnackBar(
-                              const SnackBar(
-                                  content: Text('Could not change password')),
+                              SnackBar(
+                                content: Text(
+                                  AppStrings.of(sheetCtx)
+                                      .t('profile.changePasswordError'),
+                                ),
+                              ),
                             );
                           }
                         } finally {
@@ -236,22 +244,24 @@ Future<void> _showChangePassword(BuildContext context, WidgetRef ref) async {
 Future<void> _confirmLogoutAll(BuildContext context, WidgetRef ref) async {
   final confirmed = await showDialog<bool>(
     context: context,
-    builder: (dctx) => AlertDialog(
-      title: const Text('Log out all devices?'),
-      content: const Text(
-          'This will sign you out from every browser and phone. You\'ll need to sign in again.'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(dctx, false),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: SeuColors.red),
-          onPressed: () => Navigator.pop(dctx, true),
-          child: const Text('Log out everywhere'),
-        ),
-      ],
-    ),
+    builder: (dctx) {
+      final s = AppStrings.of(dctx);
+      return AlertDialog(
+        title: Text(s.t('profile.logoutAllConfirm')),
+        content: Text(s.t('profile.logoutAllConfirmBody')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dctx, false),
+            child: Text(s.t('common.cancel')),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: SeuColors.red),
+            onPressed: () => Navigator.pop(dctx, true),
+            child: Text(s.t('profile.logoutEverywhere')),
+          ),
+        ],
+      );
+    },
   );
   if (confirmed != true) return;
   try {
@@ -312,8 +322,8 @@ class _BiometricToggleState extends ConsumerState<_BiometricToggle> {
           alignment: Alignment.center,
           child: const Icon(Icons.fingerprint, color: SeuColors.red, size: 18),
         ),
-        title: const Text('Biometric sign-in'),
-        subtitle: const Text('Use Face ID / fingerprint to sign in'),
+        title: Text(AppStrings.of(context).t('profile.biometricEnabled')),
+        subtitle: Text(AppStrings.of(context).t('profile.biometricHint')),
         value: _loading ? false : _enabled,
         onChanged: _loading ? null : _toggle,
       ),

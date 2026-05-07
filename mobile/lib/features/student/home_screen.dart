@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/auth_state.dart';
+import '../../core/strings.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/seu/bento_tile.dart';
 import '../../widgets/seu/lecture_card.dart';
@@ -76,11 +77,11 @@ final _todayProvider = FutureProvider<List<_Lecture>>((ref) async {
 class StudentHomeScreen extends ConsumerWidget {
   const StudentHomeScreen({super.key});
 
-  String _greeting() {
+  String _greetingKey() {
     final h = DateTime.now().hour;
-    if (h < 12) return 'Good morning';
-    if (h < 17) return 'Good afternoon';
-    return 'Good evening';
+    if (h < 12) return 'home.goodMorning';
+    if (h < 17) return 'home.goodAfternoon';
+    return 'home.goodEvening';
   }
 
   @override
@@ -88,6 +89,7 @@ class StudentHomeScreen extends ConsumerWidget {
     final user = ref.watch(authProvider);
     final lectures = ref.watch(_todayProvider);
     final theme = Theme.of(context);
+    final s = AppStrings.of(context);
     return Scaffold(
       body: SafeArea(
         bottom: false,
@@ -113,14 +115,14 @@ class StudentHomeScreen extends ConsumerWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '${_greeting()},',
+                                  '${s.t(_greetingKey())},',
                                   style: theme.textTheme.bodyMedium?.copyWith(
                                     color: SeuColors.gray,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  user?.name ?? 'Student',
+                                  user?.name ?? s.t('home.studentFallback'),
                                   style: theme.textTheme.headlineMedium,
                                 ),
                                 const SizedBox(height: 4),
@@ -182,11 +184,11 @@ class StudentHomeScreen extends ConsumerWidget {
                       child: Row(
                         children: [
                           Text(
-                            "Today's lectures",
+                            s.t('home.todayLectures'),
                             style: theme.textTheme.titleLarge,
                           ),
                           const SizedBox(width: 8),
-                          const BentoLabel(text: 'TODAY'),
+                          BentoLabel(text: s.t('common.todayLabel')),
                         ],
                       ),
                     ),
@@ -253,8 +255,8 @@ class _NextLectureCountdownState extends State<_NextLectureCountdown> {
     super.dispose();
   }
 
-  String _format(Duration d) {
-    if (d.isNegative) return 'In progress';
+  String _format(BuildContext context, Duration d) {
+    if (d.isNegative) return AppStrings.of(context).t('home.inProgress');
     if (d.inHours > 0) {
       return '${d.inHours}h ${d.inMinutes % 60}m';
     }
@@ -266,6 +268,7 @@ class _NextLectureCountdownState extends State<_NextLectureCountdown> {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     if (_next == null) {
       return Container(
         padding: const EdgeInsets.all(20),
@@ -280,7 +283,7 @@ class _NextLectureCountdownState extends State<_NextLectureCountdown> {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                'No more lectures today',
+                s.t('home.allCaughtUp'),
                 style: Theme.of(context).textTheme.titleLarge,
               ),
             ),
@@ -313,7 +316,7 @@ class _NextLectureCountdownState extends State<_NextLectureCountdown> {
               ),
               const SizedBox(width: 8),
               Text(
-                'NEXT LECTURE',
+                s.t('home.nextLectureLabel'),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: SeuColors.gold,
                       letterSpacing: 1.4,
@@ -325,7 +328,7 @@ class _NextLectureCountdownState extends State<_NextLectureCountdown> {
           ),
           const SizedBox(height: 12),
           Text(
-            _format(_remaining),
+            _format(context, _remaining),
             style: const TextStyle(
               color: SeuColors.white,
               fontSize: 44,
@@ -377,11 +380,12 @@ class _QuickStatsRow extends StatelessWidget {
       (l) => l.start.isBefore(now) && l.end.isAfter(now),
     ).length;
 
+    final s = AppStrings.of(context);
     return Row(
       children: [
         Expanded(
           child: _StatTile(
-            label: 'Upcoming',
+            label: s.t('home.upcoming'),
             value: upcoming.toString(),
             accent: SeuColors.red,
             icon: Icons.schedule,
@@ -390,7 +394,7 @@ class _QuickStatsRow extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: _StatTile(
-            label: 'In progress',
+            label: s.t('home.inProgress'),
             value: inProgress.toString(),
             accent: SeuColors.success,
             icon: Icons.bolt_outlined,
@@ -472,7 +476,7 @@ class _LectureList extends StatelessWidget {
           borderRadius: SeuRadius.lgR,
           border: Border.all(color: SeuColors.navy.withOpacity(0.06)),
         ),
-        child: const Text('No lectures scheduled for today.'),
+        child: Text(AppStrings.of(context).t('home.noToday')),
       );
     }
     final now = DateTime.now();
@@ -564,7 +568,7 @@ class _ErrorCard extends StatelessWidget {
         border: Border.all(color: SeuColors.danger.withOpacity(0.4)),
       ),
       child: Text(
-        'Failed to load: $message',
+        AppStrings.of(context).fill('common.failedToLoad', {'message': message}),
         style: const TextStyle(color: SeuColors.danger),
       ),
     );

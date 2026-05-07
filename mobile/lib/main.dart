@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'core/auth_state.dart';
 import 'core/locale_provider.dart';
 import 'core/notifications.dart';
+import 'core/strings.dart';
 import 'features/attendance/history_screen.dart';
 import 'features/attendance/scan_screen.dart';
 import 'features/auth/login_screen.dart';
@@ -62,12 +63,14 @@ final _routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/doctor/active',
-        builder: (_, state) {
+        builder: (context, state) {
           final args = (state.extra ?? const {}) as Map;
+          final s = AppStrings.of(context);
           return ActiveSessionScreen(
-            subject: args['subject'] as String? ?? 'Active lecture',
-            section: args['section'] as String? ?? 'Section',
-            room: args['room'] as String? ?? 'Room',
+            subject: args['subject'] as String? ??
+                s.t('doctor.activeLectureFallback'),
+            section: args['section'] as String? ?? s.t('doctor.sectionFallback'),
+            room: args['room'] as String? ?? s.t('doctor.roomFallback'),
           );
         },
       ),
@@ -133,34 +136,40 @@ class HomeShell extends ConsumerWidget {
     '/profile',
   ];
 
-  static const _items = [
-    SeuNavItem(icon: Icons.home_outlined, activeIcon: Icons.home, label: 'Home'),
-    SeuNavItem(
-      icon: Icons.calendar_today_outlined,
-      activeIcon: Icons.calendar_today,
-      label: 'Schedule',
-    ),
-    SeuNavItem(
-      icon: Icons.qr_code_scanner_outlined,
-      activeIcon: Icons.qr_code_scanner,
-      label: 'Scan',
-    ),
-    SeuNavItem(
-      icon: Icons.bar_chart_outlined,
-      activeIcon: Icons.bar_chart,
-      label: 'History',
-    ),
-    SeuNavItem(
-      icon: Icons.notifications_outlined,
-      activeIcon: Icons.notifications,
-      label: 'Inbox',
-    ),
-    SeuNavItem(
-      icon: Icons.person_outline,
-      activeIcon: Icons.person,
-      label: 'Profile',
-    ),
-  ];
+  // Labels are resolved through AppStrings at build time so the bar reflects
+  // the current locale. Icons stay const.
+  static List<SeuNavItem> _itemsFor(AppStrings s) => [
+        SeuNavItem(
+          icon: Icons.home_outlined,
+          activeIcon: Icons.home,
+          label: s.t('nav.home'),
+        ),
+        SeuNavItem(
+          icon: Icons.calendar_today_outlined,
+          activeIcon: Icons.calendar_today,
+          label: s.t('nav.schedule'),
+        ),
+        SeuNavItem(
+          icon: Icons.qr_code_scanner_outlined,
+          activeIcon: Icons.qr_code_scanner,
+          label: s.t('nav.scan'),
+        ),
+        SeuNavItem(
+          icon: Icons.bar_chart_outlined,
+          activeIcon: Icons.bar_chart,
+          label: s.t('nav.history'),
+        ),
+        SeuNavItem(
+          icon: Icons.notifications_outlined,
+          activeIcon: Icons.notifications,
+          label: s.t('nav.inbox'),
+        ),
+        SeuNavItem(
+          icon: Icons.person_outline,
+          activeIcon: Icons.person,
+          label: s.t('nav.profile'),
+        ),
+      ];
 
   int _indexFor(String path) {
     final idx = _routes.indexWhere((r) => path.startsWith(r));
@@ -173,7 +182,7 @@ class HomeShell extends ConsumerWidget {
     return Scaffold(
       body: child,
       bottomNavigationBar: SeuBottomNav(
-        items: _items,
+        items: _itemsFor(AppStrings.of(context)),
         selectedIndex: _indexFor(loc),
         onSelected: (i) => context.go(_routes[i]),
       ),

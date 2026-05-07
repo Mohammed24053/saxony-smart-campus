@@ -107,8 +107,9 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
             child: async.when(
               data: (slots) {
                 final filtered = slots
-                    .where((s) =>
-                        (s as Map<String, dynamic>)['dayOfWeek'] == _selectedDay)
+                    .where((slot) =>
+                        (slot as Map<String, dynamic>)['dayOfWeek'] ==
+                            _selectedDay)
                     .toList();
                 if (filtered.isEmpty) {
                   return Center(
@@ -131,15 +132,15 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
                     itemCount: filtered.length,
                     itemBuilder: (_, i) {
-                      final s = filtered[i] as Map<String, dynamic>;
+                      final slot = filtered[i] as Map<String, dynamic>;
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 10),
                         child: LectureCard(
-                          subject: s['subject']?['name'] as String? ?? '—',
+                          subject: slot['subject']?['name'] as String? ?? '—',
                           time:
-                              '${s['startTime'] ?? ''}–${s['endTime'] ?? ''}',
-                          room: s['room']?['name'] as String? ?? '',
-                          doctor: s['doctor']?['name'] as String? ?? '',
+                              '${slot['startTime'] ?? ''}–${slot['endTime'] ?? ''}',
+                          room: slot['room']?['name'] as String? ?? '',
+                          doctor: slot['doctor']?['name'] as String? ?? '',
                           accent: _accentFor(i),
                         )
                             .animate()

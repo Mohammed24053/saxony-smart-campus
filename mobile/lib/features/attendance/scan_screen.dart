@@ -87,6 +87,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
           msg = (data['error']?['message'] ?? data['message'] ?? msg).toString();
         }
       }
+      if (!mounted) return;
       setState(() {
         _state = _stateFor(code);
         _resultMessage = msg;

@@ -44,6 +44,10 @@ export class NotificationsController {
     @Body() dto: SendNotificationDto,
   ) {
     if (!uni) throw new AppException(ErrorCodes.UNAUTHORIZED);
+    // Broadcast can hit every user in the tenant — restrict to admins.
+    if (dto.targetType === 'broadcast' && user.role !== 'admin') {
+      throw new AppException(ErrorCodes.FORBIDDEN);
+    }
     return this.notifications.sendFromController(uni, user.userId, dto);
   }
 

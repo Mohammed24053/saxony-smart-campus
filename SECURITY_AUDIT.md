@@ -2,6 +2,29 @@
 
 Saxony Smart Campus — deep security audit and remediation.
 
+## Status
+
+| # | Finding | Severity (before) | Status |
+| - | ------- | ----------------- | ------ |
+| 2.1 | Unauthenticated WebSocket gateways (`/attendance`, `/notifications`) | Critical | **Fixed** — JWT handshake + tenant/role ACLs |
+| 2.2 | `POST /notifications/send` cross-tenant fan-out | Critical | **Fixed** — recipients intersected with tenant; broadcast admin-only |
+| 2.3 | bcrypt scan loop on refresh + reset token verify | High (DoS + correctness) | **Fixed** — HMAC-SHA256 O(1) lookup |
+| 2.4 | Bull-Board JWT in query string | High | **Fixed** — header-only |
+| 2.5 | `/students/import` unbounded upload | High | **Fixed** — 5 MB / 1 file / XLSX filter / 5000-row cap |
+| 2.6 | `/me/push-token` hijack | High | **Fixed** — owner check |
+| 2.7 | CSV formula injection (`/reports/*?format=csv`) | High | **Fixed** — leading-character guard |
+| 2.8 | Plaintext passwords returned by `/users` | High | **Fixed** — password-reset email flow |
+| 2.9 | `QR_HMAC_SECRET` defaults to `""` | High | **Fixed** — refuses to boot if unset |
+| 2.10 | `INITIAL_ADMIN_PASSWORD` defaults to `ChangeMe!2025` | High | **Fixed** — random one-time password in dev; required in prod |
+| 2.11 | Dependency CVEs (multer, lodash, fast-xml-*, next) | High | **Fixed (multer/lodash/fast-xml/postcss)**; **partial (next 14.2.x patched line)** |
+| 2.12 | `/auth/logout` unrate-limited | Medium | **Fixed** — 30/60s throttle |
+| 2.13 | CORS=* + credentials | Medium | **Fixed** — prod refuses, dev disables credentials |
+| 2.14 | Cookie parser unsigned | Low | **Fixed** — `COOKIE_SECRET` plumbed |
+| 2.15 | `/leave-requests/:id/review` accepts non-UUID `:id` | Low | **Fixed** — ParseUUIDPipe |
+
+See §2 below for the per-finding writeup (severity, CWE, root cause, PoC, fix, regression risk).
+
+
 > Scope: backend (NestJS 10 / Prisma 5 / Socket.io / Bull), admin web (Next.js 14), mobile (Flutter 3), infrastructure (Docker / MinIO / Redis 7 / Postgres 16), CI/CD (GitHub Actions), dependency tree and environment configuration.
 >
 > Method: complete attack-surface mapping → end-to-end runtime tracing of every REST controller, WebSocket gateway, queue worker, auth flow, token lifecycle, file upload path and ORM call → exploitation review against OWASP Top 10, CWE Top 25 and Socket.IO / Next.js / NestJS / multer / lodash advisory databases.
@@ -30,14 +53,14 @@ However, a small number of issues are real and exploitable today:
 12. **`/auth/logout` is unrate-limited and public**, and `/auth/refresh` is throttled at a generous 30/min — both feed the bcrypt scan loop in #3 and are easy DoS amplifiers. **Medium.**
 13. **CORS accepts `*` while also setting `credentials: true`** when `ADMIN_WEB_ORIGIN=*` — a configuration that browsers reject and that lets the operator believe credentials are working when they are not. **Medium.**
 
-This PR fixes 1–13 in code, adds regression tests, and pins the vulnerable dependencies. Findings 14+ below are advisories the team should track but are either not directly exploitable today or carry too high a regression risk to fix in a security PR.
+This PR fixes 1–13 in code, adds regression tests, and pins the vulnerable dependencies. Findings §4 below are advisories the team should track but are either not directly exploitable today or carry too high a regression risk to fix in a security PR.
 
 | Posture | Critical | High | Medium | Low |
 | ------- | -------- | ---- | ------ | --- |
 | Before | 3 | 9 | 7 | 4 |
-| After  | 0 | 1 | 4 | 4 |
+| After  | 0 | 1 | 3 | 4 |
 
-(The remaining "High" after fixes is the email-as-global-unique-key behaviour in `User.email`; it is a schema-level decision documented in §F.)
+The remaining `High` after fixes is the bundle of `next 14.2.x` advisories that require a Next.js 15 upgrade (major-version migration); the 14.2.x line has been bumped to the latest patched build (`14.2.33`) so all Next-line _moderate_ XSS and cache-poisoning advisories that ship a 14.2.x patch are closed. See §4.
 
 ---
 

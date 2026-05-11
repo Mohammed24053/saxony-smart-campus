@@ -10,7 +10,7 @@ import '../../theme/app_theme.dart';
 final notificationsProvider = FutureProvider<List<dynamic>>((ref) async {
   final api = ref.read(apiProvider);
   final r = await api.dio.get('/notifications');
-  return r.data['data']['items'] as List<dynamic>;
+  return r.data['data'] as List<dynamic>;
 });
 
 enum _NotifKind { general, postponed, cancelled, warning }

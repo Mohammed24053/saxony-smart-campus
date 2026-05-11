@@ -11,7 +11,7 @@ import '../../widgets/seu/offline_banner.dart';
 final scheduleProvider = FutureProvider<List<dynamic>>((ref) async {
   final api = ref.read(apiProvider);
   final r = await api.dio.get('/schedule/my');
-  return r.data['data']['slots'] as List<dynamic>;
+  return r.data['data'] as List<dynamic>;
 });
 
 class ScheduleScreen extends ConsumerStatefulWidget {

@@ -36,7 +36,7 @@ final _todayProvider = FutureProvider<List<_Lecture>>((ref) async {
   final api = ref.read(apiProvider);
   try {
     final r = await api.dio.get('/schedule/my');
-    final slots = r.data['data']['slots'] as List<dynamic>;
+    final slots = r.data['data'] as List<dynamic>;
     final now = DateTime.now();
     final today = now.weekday % 7; // Sun=0..Sat=6 in our convention
     final accents = const [

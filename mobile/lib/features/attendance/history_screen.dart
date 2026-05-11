@@ -31,7 +31,7 @@ final historyProvider = FutureProvider<List<_SubjectSummary>>((ref) async {
   if (user == null) return const [];
   final api = ref.read(apiProvider);
   final r = await api.dio.get('/attendance/student/${user.id}');
-  final items = r.data['data']['items'] as List<dynamic>;
+  final items = r.data['data'] as List<dynamic>;
   final bySubject = <String, List<_HistoryEntry>>{};
   for (final raw in items) {
     final m = raw as Map<String, dynamic>;

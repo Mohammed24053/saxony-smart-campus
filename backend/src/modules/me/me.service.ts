@@ -115,11 +115,22 @@ export class MeService {
   }
 
   async registerPushToken(userId: string, token: string, platform: 'ios' | 'android' | 'web') {
-    await this.prisma.pushToken.upsert({
-      where: { token },
-      update: { userId, platform, lastSeenAt: new Date() },
-      create: { userId, token, platform },
-    });
+    // Anti-hijack: PushToken.token is `@unique`, so a naive upsert would let
+    // attacker A claim victim B's known FCM token and silently take over the
+    // delivery target. Only allow registration if the token is unbound or
+    // already belongs to the same user.
+    const existing = await this.prisma.pushToken.findUnique({ where: { token } });
+    if (existing && existing.userId !== userId) {
+      throw new AppException(ErrorCodes.FORBIDDEN);
+    }
+    if (existing) {
+      await this.prisma.pushToken.update({
+        where: { token },
+        data: { platform, lastSeenAt: new Date() },
+      });
+      return;
+    }
+    await this.prisma.pushToken.create({ data: { userId, token, platform } });
   }
 
   async unregisterPushToken(userId: string, token: string) {

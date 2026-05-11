@@ -45,6 +45,15 @@ export class StudentsImportService {
     }
     const ws = wb.worksheets[0];
     if (!ws) throw new AppException(ErrorCodes.INVALID_FILE_FORMAT);
+    // Hard cap on the parseable row count. exceljs streams from a Buffer but
+    // each cell still allocates — a 65k-row sheet of long strings can spike
+    // hundreds of MB. The product spec caps imports to a few thousand rows.
+    const MAX_ROWS = 5000;
+    if (ws.rowCount > MAX_ROWS + 1) {
+      throw new AppException(ErrorCodes.IMPORT_VALIDATION_FAILED, {
+        message: `Import exceeds row limit (${MAX_ROWS}).`,
+      });
+    }
 
     const headerRow = ws.getRow(1).values as Array<string | undefined>;
     const headerIdx: Record<string, number> = {};

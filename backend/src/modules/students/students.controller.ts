@@ -69,9 +69,28 @@ export class StudentsController {
       .send(buf);
   }
 
+  // Allow at most one XLSX file, ≤ 5 MB, single-part upload. The bare
+  // FileInterceptor() with no limits lets a caller buffer arbitrarily large
+  // payloads in RAM (memoryStorage default), and multer 2.0.x has open DoS
+  // CVEs we mitigate by pinning to 2.1.1+ via pnpm.overrides as well.
   @Post('import')
   @Roles('admin')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+      fileFilter: (_req, file, cb) => {
+        const ok =
+          file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+          file.mimetype === 'application/zip' ||
+          file.mimetype === 'application/octet-stream';
+        if (!ok) return cb(new AppException(ErrorCodes.INVALID_FILE_FORMAT), false);
+        if (!/\.xlsx$/i.test(file.originalname || '')) {
+          return cb(new AppException(ErrorCodes.INVALID_FILE_FORMAT), false);
+        }
+        cb(null, true);
+      },
+    }),
+  )
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Bulk import students from Excel.' })
   async import(

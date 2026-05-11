@@ -6,7 +6,19 @@ const prisma = new PrismaClient();
 
 async function main(): Promise<void> {
   const adminEmail = process.env.INITIAL_ADMIN_EMAIL ?? 'admin@saxony-egypt.edu';
-  const adminPassword = process.env.INITIAL_ADMIN_PASSWORD ?? 'ChangeMe!2025';
+  // Public default removed (CWE-798). Operators must supply the password
+  // explicitly; if absent we mint a strong random one and print it once so
+  // the human can reset via the password-reset flow.
+  let adminPassword = process.env.INITIAL_ADMIN_PASSWORD;
+  let generatedPassword = false;
+  if (!adminPassword || adminPassword.length < 12) {
+    const buf = await import('crypto').then((m) => m.randomBytes(24));
+    adminPassword = buf.toString('base64url');
+    generatedPassword = true;
+    console.log(
+      `! INITIAL_ADMIN_PASSWORD not set — generated one-time password (visible ONLY in this log): ${adminPassword}`,
+    );
+  }
   const universityName = process.env.INITIAL_UNIVERSITY_NAME ?? 'Saxony Egypt University';
   const universitySlug = process.env.INITIAL_UNIVERSITY_SLUG ?? 'saxony-egypt';
 
@@ -62,7 +74,9 @@ async function main(): Promise<void> {
   }
 
   // Demo subject.
-  const demoSubject = await prisma.subject.findUnique({ where: { code: 'CS101' } }).catch(() => null);
+  const demoSubject = await prisma.subject
+    .findUnique({ where: { code: 'CS101' } })
+    .catch(() => null);
   if (!demoSubject) {
     await prisma.subject.create({
       data: {
@@ -76,7 +90,9 @@ async function main(): Promise<void> {
     });
   }
 
-  console.log(`Done. Admin: ${adminEmail}  Password: (env)  University: ${universitySlug}`);
+  console.log(
+    `Done. Admin: ${adminEmail}  Password: ${generatedPassword ? '(generated above)' : '(env)'}  University: ${universitySlug}`,
+  );
 }
 
 main()

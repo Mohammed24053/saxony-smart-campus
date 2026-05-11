@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { IsDateString, IsIn, IsOptional, IsString } from 'class-validator';
 import { LeaveRequestStatus } from '@prisma/client';
@@ -77,7 +87,7 @@ export class LeaveRequestsController {
   review(
     @CurrentUniversity() uni: string,
     @CurrentUser() actor: AuthPrincipal,
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: ReviewLeaveDto,
   ) {
     if (!uni) throw new AppException(ErrorCodes.UNAUTHORIZED);

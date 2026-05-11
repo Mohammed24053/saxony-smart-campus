@@ -3,10 +3,11 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
+import { JwtConfig } from '../../config/jwt.config';
 import { AppException } from '../../common/errors/app.exception';
 import { ErrorCodes } from '../../common/errors/error-codes';
 import { EmailService } from '../email/email.service';
-import { TokenService } from '../auth/token.service';
+import { TokenService, hashRefreshToken } from '../auth/token.service';
 import { AuditService } from '../audit/audit.service';
 
 @Injectable()
@@ -30,7 +31,8 @@ export class PasswordResetService {
     if (!user || !user.isActive || user.deletedAt) return;
 
     const token = crypto.randomBytes(32).toString('base64url');
-    const tokenHash = await bcrypt.hash(token, 10);
+    const cfg = this.config.getOrThrow<JwtConfig>('jwt');
+    const tokenHash = hashRefreshToken(cfg.refreshSecret, token);
     const expiresAt = new Date(Date.now() + this.tokenTtlMinutes * 60_000);
     await this.prisma.passwordResetToken.create({
       data: { userId: user.id, tokenHash, expiresAt },
@@ -75,21 +77,15 @@ export class PasswordResetService {
         message: 'Password must be at least 8 characters',
       });
 
-    const candidates = await this.prisma.passwordResetToken.findMany({
-      where: { usedAt: null, expiresAt: { gt: new Date() } },
+    const cfg = this.config.getOrThrow<JwtConfig>('jwt');
+    const lookupHash = hashRefreshToken(cfg.refreshSecret, token);
+    const matched = await this.prisma.passwordResetToken.findUnique({
+      where: { tokenHash: lookupHash },
       include: { user: true },
-      orderBy: { createdAt: 'desc' },
-      take: 200,
     });
-    let matched = null;
-    for (const c of candidates) {
-      // eslint-disable-next-line no-await-in-loop
-      if (await bcrypt.compare(token, c.tokenHash)) {
-        matched = c;
-        break;
-      }
+    if (!matched || matched.usedAt || matched.expiresAt <= new Date()) {
+      throw new AppException(ErrorCodes.TOKEN_INVALID);
     }
-    if (!matched) throw new AppException(ErrorCodes.TOKEN_INVALID);
 
     const passwordHash = await bcrypt.hash(newPassword, 10);
     await this.prisma.$transaction([

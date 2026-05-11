@@ -14,32 +14,41 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
-import { IsIn, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsIn, IsOptional, IsString, Length, Matches, MaxLength } from 'class-validator';
 import { AuthPrincipal, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { MeService } from './me.service';
+import { IsStrongPassword } from '../../common/validators/strong-password';
 
 class UpdateMeDto {
   @IsOptional()
   @IsString()
+  @MaxLength(120)
   name?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(30)
+  @Matches(/^\+?[0-9\s().-]{6,30}$/, {
+    message: 'phone must contain digits and basic separators only',
+  })
   phone?: string;
 }
 
 class ChangePasswordDto {
   @IsString()
+  @Length(8, 128)
   currentPassword!: string;
 
   @IsString()
-  @MinLength(8)
+  @IsStrongPassword()
   newPassword!: string;
 }
 
 class PushTokenDto {
+  // FCM/APNs tokens are typically 140–200 chars; cap conservatively.
   @IsString()
+  @MaxLength(512)
   token!: string;
 
   @IsIn(['ios', 'android', 'web'])

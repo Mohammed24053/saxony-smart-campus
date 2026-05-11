@@ -71,7 +71,26 @@ export class StudentsController {
 
   @Post('import')
   @Roles('admin')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      // Hard-cap on uploaded file size: 5 MB is more than enough for a sheet
+      // of ~50k students. Prevents memory exhaustion / DoS via huge uploads.
+      limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+      fileFilter: (_req, file, cb) => {
+        const allowed = new Set([
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'application/vnd.ms-excel',
+          'application/octet-stream', // some clients send xlsx as octet-stream
+        ]);
+        const isXlsx = /\.xlsx$/i.test(file.originalname);
+        if (allowed.has(file.mimetype) && isXlsx) {
+          cb(null, true);
+        } else {
+          cb(null, false);
+        }
+      },
+    }),
+  )
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Bulk import students from Excel.' })
   async import(

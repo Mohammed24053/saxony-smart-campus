@@ -5,6 +5,7 @@ import { AppException } from '../../common/errors/app.exception';
 import { ErrorCodes } from '../../common/errors/error-codes';
 import { TokenService } from '../auth/token.service';
 import { AuditService } from '../audit/audit.service';
+import { isStrongPassword } from '../../common/validators/strong-password';
 
 export interface UpdateProfileInput {
   name?: string;
@@ -70,15 +71,20 @@ export class MeService {
     newPassword: string,
     meta: { ip?: string; ua?: string } = {},
   ) {
-    if (newPassword.length < 8)
+    const strong = isStrongPassword(newPassword);
+    if (!strong.ok)
       throw new AppException(ErrorCodes.VALIDATION_ERROR, {
-        message: 'Password must be at least 8 characters',
+        message: strong.reason ?? 'Password is not strong enough',
       });
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new AppException(ErrorCodes.NOT_FOUND);
     const ok = await bcrypt.compare(currentPassword, user.passwordHash);
     if (!ok)
       throw new AppException(ErrorCodes.UNAUTHORIZED, { message: 'Current password incorrect' });
+    if (currentPassword === newPassword)
+      throw new AppException(ErrorCodes.VALIDATION_ERROR, {
+        message: 'New password must differ from current password',
+      });
     const passwordHash = await bcrypt.hash(newPassword, 10);
     await this.prisma.user.update({ where: { id: userId }, data: { passwordHash } });
     await this.tokens.revokeAllForUser(userId);

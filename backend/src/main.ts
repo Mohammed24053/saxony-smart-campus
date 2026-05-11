@@ -54,11 +54,17 @@ async function bootstrap(): Promise<void> {
   // Request-id propagation for log correlation. Generates a UUID per request
   // (or accepts a client-supplied X-Request-Id) and echoes it back on the
   // response so the admin can surface it for support tickets.
+  //
+  // We constrain accepted client values to `[A-Za-z0-9._-]{1,128}` to avoid
+  // log-injection / response-splitting via header smuggling — a malicious
+  // client otherwise could embed control characters into the value, which
+  // then end up in plaintext log lines.
+  const REQUEST_ID_RE = /^[A-Za-z0-9._-]{1,128}$/;
   app.use((req: Request, res: Response, next: NextFunction) => {
     const incoming = (req.headers['x-request-id'] || req.headers['x-correlation-id']) as
       | string
       | undefined;
-    const id = incoming && incoming.length <= 128 ? incoming : uuid();
+    const id = incoming && REQUEST_ID_RE.test(incoming) ? incoming : uuid();
     (req as Request & { id?: string }).id = id;
     res.setHeader('X-Request-Id', id);
     next();
@@ -99,14 +105,18 @@ async function bootstrap(): Promise<void> {
         serverAdapter: adapter,
       });
 
+      // Bull-Board guard. Only accepts a Bearer token in the Authorization
+      // header — query-string tokens used to be supported but were dropped
+      // because they leak into nginx / cdn / browser-history access logs and
+      // referrer chains (CWE-598).
       const guard = async (req: Request, res: Response, next: NextFunction) => {
         try {
           const headerToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
-          const queryToken =
-            typeof req.query.access_token === 'string' ? req.query.access_token : '';
-          const token = headerToken || queryToken;
-          if (!token) return res.status(401).send('Unauthorized');
-          const payload = (await jwt.verifyAsync(token)) as { sub: string; role?: string };
+          if (!headerToken) {
+            res.setHeader('WWW-Authenticate', 'Bearer realm="bull-board"');
+            return res.status(401).send('Unauthorized');
+          }
+          const payload = (await jwt.verifyAsync(headerToken)) as { sub: string; role?: string };
           if (payload.role !== 'admin') return res.status(403).send('Forbidden');
           const user = await prisma.user.findUnique({
             where: { id: payload.sub },
@@ -128,15 +138,24 @@ async function bootstrap(): Promise<void> {
     Logger.warn(`Failed to mount Bull-Board: ${(err as Error)?.message ?? err}`, 'Bootstrap');
   }
 
-  const swagger = new DocumentBuilder()
-    .setTitle('Saxony Smart Campus API')
-    .setDescription('B2B SaaS for university operations.')
-    .setVersion('1.0.0')
-    .addBearerAuth()
-    .addCookieAuth('refreshToken')
-    .build();
-  const document = SwaggerModule.createDocument(app, swagger);
-  SwaggerModule.setup(`${cfg.apiPrefix}/docs`, app, document);
+  // Swagger UI surfaces the full API contract (routes, DTOs, error codes) and
+  // is therefore reconnaissance gold for an attacker. We expose it only in
+  // non-production, or when the operator explicitly opts in via
+  // `ENABLE_SWAGGER_UI=true`. Production deploys should keep it disabled.
+  const swaggerEnabled = cfg.nodeEnv !== 'production' || process.env.ENABLE_SWAGGER_UI === 'true';
+  if (swaggerEnabled) {
+    const swagger = new DocumentBuilder()
+      .setTitle('Saxony Smart Campus API')
+      .setDescription('B2B SaaS for university operations.')
+      .setVersion('1.0.0')
+      .addBearerAuth()
+      .addCookieAuth('refreshToken')
+      .build();
+    const document = SwaggerModule.createDocument(app, swagger);
+    SwaggerModule.setup(`${cfg.apiPrefix}/docs`, app, document);
+  } else {
+    Logger.log('Swagger UI disabled (NODE_ENV=production)', 'Bootstrap');
+  }
 
   await app.listen(cfg.port);
   Logger.log(

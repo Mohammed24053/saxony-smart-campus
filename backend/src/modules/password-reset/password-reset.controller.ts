@@ -2,21 +2,24 @@ import { Body, Controller, HttpCode, HttpStatus, Ip, Post, Req } from '@nestjs/c
 import { Throttle } from '@nestjs/throttler';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsString, MaxLength } from 'class-validator';
 import { Public } from '../../common/decorators/public.decorator';
 import { PasswordResetService } from './password-reset.service';
+import { IsStrongPassword } from '../../common/validators/strong-password';
 
 class RequestResetDto {
   @IsEmail()
+  @MaxLength(255)
   email!: string;
 }
 
 class ConfirmResetDto {
   @IsString()
+  @MaxLength(512)
   token!: string;
 
   @IsString()
-  @MinLength(8)
+  @IsStrongPassword()
   newPassword!: string;
 }
 

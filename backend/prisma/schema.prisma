@@ -1,0 +1,513 @@
+// Saxony Egypt — Smart Campus System
+// Prisma schema. PostgreSQL 16. Multi-tenant by `universityId` on every
+// tenant-owned table. All deletions are soft (deletedAt).
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Enums
+// ────────────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  admin
+  student
+  doctor
+}
+
+enum RoomType {
+  lecture
+  lab
+  hall
+}
+
+enum SubjectType {
+  theory
+  practical
+  mixed
+}
+
+enum AttendanceStatus {
+  present
+  late
+  absent
+  excused
+}
+
+enum SessionStatus {
+  active
+  closed
+  expired
+}
+
+enum WarningLevel {
+  warning_1
+  warning_2
+  deprivation
+}
+
+enum NotificationType {
+  general
+  postponed
+  cancelled
+  room_changed
+  academic_warning
+  at_risk_alert
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Tenancy
+// ────────────────────────────────────────────────────────────────────────────
+
+model University {
+  id        String    @id @default(uuid())
+  name      String
+  slug      String    @unique
+  settings  Json      @default("{}")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  users          User[]
+  rooms          Room[]
+  subjects       Subject[]
+  sections       Section[]
+  scheduleSlots  ScheduleSlot[]
+  notifications  Notification[]
+  atRiskSettings AtRiskSetting[]
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Identity
+// ────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id           String    @id @default(uuid())
+  universityId String
+  role         UserRole
+  name         String
+  email        String?   @unique
+  phone        String?
+  passwordHash String
+  fcmToken     String?
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  university             University              @relation(fields: [universityId], references: [id])
+  student                Student?
+  doctor                 Doctor?
+  refreshTokens          RefreshToken[]
+  pushTokens             PushToken[]
+  passwordResetTokens    PasswordResetToken[]
+  twoFactor              AdminTwoFactor?
+  notificationsSent      Notification[]          @relation("NotificationSender")
+  notificationRecipients NotificationRecipient[]
+
+  @@index([universityId])
+  @@index([role])
+}
+
+model RefreshToken {
+  id          String    @id @default(uuid())
+  userId      String
+  tokenHash   String    @unique
+  familyId    String    @default(uuid())
+  userAgent   String?
+  ipAddress   String?
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  revokedReason String?
+  replacedBy  String?
+  createdAt   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([familyId])
+}
+
+model PushToken {
+  id         String   @id @default(uuid())
+  userId     String
+  token      String   @unique
+  platform   String   // "ios" | "android" | "web"
+  lastSeenAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  universityId String
+  actorId      String?
+  actorRole    String?
+  action       String   // "user.create" | "section.update" | "auth.login" | ...
+  entity       String?  // "User" | "Section" | ...
+  entityId     String?
+  before       Json?
+  after        Json?
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+
+  @@index([universityId])
+  @@index([actorId])
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
+
+enum LeaveRequestStatus {
+  pending
+  approved
+  rejected
+}
+
+model LeaveRequest {
+  id           String              @id @default(uuid())
+  universityId String
+  studentId    String
+  sessionId    String?
+  startsAt     DateTime
+  endsAt       DateTime
+  reason       String
+  attachmentKey String?
+  status       LeaveRequestStatus  @default(pending)
+  reviewerId   String?
+  reviewedAt   DateTime?
+  reviewerNote String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  student      Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([universityId])
+  @@index([studentId])
+  @@index([status])
+}
+
+model AdminTwoFactor {
+  userId          String   @id
+  secret          String
+  enabled         Boolean  @default(false)
+  recoveryCodes   String[] @default([])
+  lastVerifiedAt  DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// People (1:1 with User)
+// ────────────────────────────────────────────────────────────────────────────
+
+model Student {
+  id        String  @id
+  studentId String  @unique
+  faculty   String?
+  year      Int?
+  sectionId String?
+
+  user              User               @relation(fields: [id], references: [id], onDelete: Cascade)
+  section           Section?           @relation(fields: [sectionId], references: [id])
+  attendanceRecords AttendanceRecord[]
+  atRiskRecords     AtRiskRecord[]
+  leaveRequests     LeaveRequest[]
+
+  @@index([sectionId])
+}
+
+model Doctor {
+  id           String @id
+  doctorId     String @unique
+  availability Json   @default("{}")
+
+  user           User           @relation(fields: [id], references: [id], onDelete: Cascade)
+  scheduleSlots  ScheduleSlot[]
+  sessions       AttendanceSession[]
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Catalog
+// ────────────────────────────────────────────────────────────────────────────
+
+model Room {
+  id           String    @id @default(uuid())
+  universityId String
+  name         String
+  type         RoomType
+  capacity     Int
+  latitude     Float?
+  longitude    Float?
+  gpsRadius    Int       @default(50)
+  gpsEnabled   Boolean   @default(true)
+  qrCodeStatic String?   @unique
+  building     String?
+  floor        Int?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  university    University     @relation(fields: [universityId], references: [id])
+  scheduleSlots ScheduleSlot[]
+
+  @@index([universityId])
+}
+
+model Subject {
+  id              String      @id @default(uuid())
+  universityId    String
+  code            String      @unique
+  name            String
+  faculty         String?
+  hoursPerWeek    Int?
+  type            SubjectType
+  defaultDoctorId String?
+  maxRoomCapacity Int?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  deletedAt       DateTime?
+
+  university     University       @relation(fields: [universityId], references: [id])
+  scheduleSlots  ScheduleSlot[]
+  sectionLinks   SectionSubject[]
+  atRiskSettings AtRiskSetting[]
+  atRiskRecords  AtRiskRecord[]
+
+  @@index([universityId])
+}
+
+model Section {
+  id           String    @id @default(uuid())
+  universityId String
+  name         String
+  faculty      String?
+  year         Int?
+  capacity     Int?
+  createdAt    DateTime  @default(now())
+  deletedAt    DateTime?
+
+  university    University       @relation(fields: [universityId], references: [id])
+  students      Student[]
+  scheduleSlots ScheduleSlot[]
+  subjects      SectionSubject[]
+
+  @@index([universityId])
+}
+
+// Many-to-many: which sections study which subjects this semester
+model SectionSubject {
+  sectionId String
+  subjectId String
+  createdAt DateTime @default(now())
+
+  section Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@id([sectionId, subjectId])
+  @@index([subjectId])
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Schedule
+// ────────────────────────────────────────────────────────────────────────────
+
+model ScheduleSlot {
+  id           String    @id @default(uuid())
+  universityId String
+  subjectId    String
+  doctorId     String
+  roomId       String
+  sectionId    String
+  dayOfWeek    Int       // 0=Sun … 6=Sat
+  startTime    String    // "HH:mm"
+  endTime      String    // "HH:mm"
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  university University            @relation(fields: [universityId], references: [id])
+  subject    Subject               @relation(fields: [subjectId], references: [id])
+  doctor     Doctor                @relation(fields: [doctorId], references: [id])
+  room       Room                  @relation(fields: [roomId], references: [id])
+  section    Section               @relation(fields: [sectionId], references: [id])
+  sessions   AttendanceSession[]
+
+  @@index([universityId])
+  @@index([doctorId])
+  @@index([sectionId])
+  @@index([roomId])
+  @@index([dayOfWeek])
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Attendance
+// ────────────────────────────────────────────────────────────────────────────
+
+model AttendanceSession {
+  id             String        @id @default(uuid())
+  scheduleSlotId String
+  doctorId       String
+  startedAt      DateTime      @default(now())
+  endedAt        DateTime?
+  status         SessionStatus @default(active)
+  lateAfterMinutes Int         @default(15)
+  presentCount   Int           @default(0)
+  lateCount      Int           @default(0)
+  absentCount    Int           @default(0)
+
+  scheduleSlot ScheduleSlot       @relation(fields: [scheduleSlotId], references: [id])
+  doctor       Doctor             @relation(fields: [doctorId], references: [id])
+  qrCodes      QrCode[]
+  records      AttendanceRecord[]
+
+  @@index([status])
+  @@index([doctorId])
+  @@index([scheduleSlotId])
+}
+
+model QrCode {
+  id        String   @id @default(uuid())
+  sessionId String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  session AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([expiresAt])
+}
+
+model AttendanceRecord {
+  id                String           @id @default(uuid())
+  sessionId         String
+  studentId         String
+  status            AttendanceStatus
+  scannedAt         DateTime?
+  gpsLat            Float?
+  gpsLng            Float?
+  gpsDistance       Int?
+  deviceFingerprint String?
+  isManual          Boolean          @default(false)
+  manualReason      String?
+  createdAt         DateTime         @default(now())
+
+  session AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student Student           @relation(fields: [studentId], references: [id])
+
+  @@unique([sessionId, studentId])
+  @@index([sessionId])
+  @@index([studentId])
+  @@index([status])
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// At-Risk
+// ────────────────────────────────────────────────────────────────────────────
+
+model AtRiskSetting {
+  id                  String   @id @default(uuid())
+  universityId        String
+  subjectId           String
+  warning1Absences    Int      @default(3)
+  warning2Absences    Int      @default(5)
+  deprivationAbsences Int      @default(7)
+  notifyStudent       Boolean  @default(true)
+  notifyDoctor        Boolean  @default(false)
+  notifyAdmin         Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  university University @relation(fields: [universityId], references: [id])
+  subject    Subject    @relation(fields: [subjectId], references: [id])
+
+  @@unique([universityId, subjectId])
+}
+
+model AtRiskRecord {
+  id           String       @id @default(uuid())
+  studentId    String
+  subjectId    String
+  absenceCount Int
+  warningLevel WarningLevel
+  triggeredAt  DateTime     @default(now())
+  notifiedAt   DateTime?
+  isResolved   Boolean      @default(false)
+  resolvedAt   DateTime?
+
+  student Student @relation(fields: [studentId], references: [id])
+  subject Subject @relation(fields: [subjectId], references: [id])
+
+  @@index([studentId])
+  @@index([subjectId])
+  @@index([isResolved])
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Notifications
+// ────────────────────────────────────────────────────────────────────────────
+
+model Notification {
+  id           String           @id @default(uuid())
+  universityId String
+  senderId     String
+  type         NotificationType
+  title        String
+  body         String
+  payload      Json             @default("{}")
+  targetType   String           // "user" | "section" | "subject" | "broadcast"
+  targetId     String?
+  sentAt       DateTime         @default(now())
+
+  university University              @relation(fields: [universityId], references: [id])
+  sender     User                    @relation("NotificationSender", fields: [senderId], references: [id])
+  recipients NotificationRecipient[]
+
+  @@index([universityId])
+  @@index([senderId])
+  @@index([type])
+  @@index([sentAt])
+}
+
+model NotificationRecipient {
+  notificationId String
+  userId         String
+  isRead         Boolean   @default(false)
+  readAt         DateTime?
+
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([notificationId, userId])
+  @@index([userId])
+  @@index([isRead])
+}

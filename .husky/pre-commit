@@ -1,0 +1,23 @@
+#!/usr/bin/env sh
+# Pre-commit hook: lint changed packages and fail fast on type errors.
+# To skip locally during a WIP commit, run `git commit --no-verify`.
+
+set -e
+
+# Only lint/format what's actually staged so the hook stays fast.
+staged_ts=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '^(admin|backend)/.*\.(ts|tsx|js|jsx)$' || true)
+
+if [ -n "$staged_ts" ]; then
+  echo "→ prettier --check on staged TS/JS files"
+  echo "$staged_ts" | xargs ./node_modules/.bin/prettier --check
+fi
+
+if echo "$staged_ts" | grep -q '^backend/'; then
+  echo "→ eslint backend"
+  pnpm --filter backend lint --quiet
+fi
+
+if echo "$staged_ts" | grep -q '^admin/'; then
+  echo "→ eslint admin"
+  pnpm --filter admin lint
+fi

@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    name: Backend (NestJS)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter backend prisma:generate
+      - run: pnpm --filter backend exec tsc --noEmit
+      - run: pnpm --filter backend lint
+      - run: pnpm --filter backend test
+
+  admin:
+    name: Admin (Next.js)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter backend prisma:generate
+      - run: pnpm --filter admin lint
+      - run: pnpm --filter admin exec tsc --noEmit
+      - run: pnpm --filter admin build
+
+  mobile:
+    name: Mobile (Flutter)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          # 3.24.x ships Dart 3.5+, required by build_runner ≥2.4.12.
+          flutter-version: '3.24.5'
+          channel: stable
+      - run: flutter pub get
+        working-directory: mobile
+      # Pre-existing info/warning lints in the codebase are not blockers
+      # for this PR. We surface real errors only; tightening lints is a
+      # separate cleanup pass.
+      - run: flutter analyze --no-fatal-infos --no-fatal-warnings
+        working-directory: mobile
+      # Tests are gated behind a glob check so the job stays green until
+      # the test suite lands. Once `mobile/test/` is non-empty, the
+      # conditional block runs `flutter test`.
+      - name: Run tests if any exist
+        working-directory: mobile
+        run: |
+          if compgen -G "test/**/*_test.dart" > /dev/null; then
+            flutter test --coverage
+          else
+            echo "No widget tests yet — skipping flutter test."
+          fi

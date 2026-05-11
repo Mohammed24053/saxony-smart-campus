@@ -1,0 +1,194 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Saxony Egypt University — Smart Campus admin theme tokens (round 2: Data-Dense).
+ *
+ * Inspired by Linear / Vercel / Plane — operational dashboards meant to be
+ * left open for hours. Density is the primary design language:
+ *   - 8px spacing scale (strict)
+ *   - Header 56px, sidebar 240px (240/64 collapsed)
+ *   - Table rows 36px, sticky headers, inline filter chips
+ *   - Tighter type scale: body 13px, table 12px, headings -1 step
+ *   - Sharper radii (8/12) and quieter shadows
+ *
+ * Brand identity stays SEU (navy/red/gold/cream); the change is purely the
+ * spatial + typographic + motion vocabulary.
+ */
+
+@layer base {
+  :root {
+    /* Page surfaces */
+    --background: 32 33% 93%; /* #F3EDE4 cream */
+    --foreground: 240 7% 21%; /* #31313B navy */
+    --card: 0 0% 100%; /* #FFFFFF */
+    --card-foreground: 240 7% 21%;
+    --muted: 32 25% 90%; /* slightly darker cream for muted surfaces */
+    --muted-foreground: 240 2% 41%; /* #67666A gray */
+    --border: 240 7% 21% / 0.1; /* hair-line, quieter than v1 */
+    --ring: 357 67% 41%; /* #B1222A red */
+
+    /* Brand-driven semantic tokens */
+    --primary: 357 67% 41%; /* SEU red */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 43 71% 60%; /* SEU gold */
+    --secondary-foreground: 240 7% 21%;
+    --accent: 43 71% 60%; /* SEU gold */
+    --accent-foreground: 240 7% 21%;
+    --destructive: 357 67% 41%; /* SEU red doubles as destructive */
+    --destructive-foreground: 0 0% 100%;
+
+    /* Sidebar (navy) */
+    --sidebar: 240 7% 21%; /* #31313B */
+    --sidebar-foreground: 32 33% 93%; /* cream */
+    --sidebar-accent: 43 71% 60%; /* gold */
+
+    /* Radii — round 2: tighter, sharper. */
+    --radius-lg: 12px; /* cards (was 16px) */
+    --radius-md: 8px; /* buttons, inputs (was 10px) */
+    --radius-sm: 6px;
+
+    /* Density tokens (Linear-style). */
+    --density-row: 36px; /* table row height */
+    --density-th: 32px; /* table header height */
+    --density-input: 32px; /* input + button compact */
+    --density-button: 36px; /* default button */
+    --density-header: 56px; /* top bar */
+    --density-padding-x: 16px; /* card horizontal padding */
+    --density-padding-y: 12px; /* card vertical padding */
+    --density-gap-tight: 8px;
+    --density-gap: 16px;
+  }
+
+  /* Dark mode tokens — applied when <html class="dark"> */
+  :root.dark {
+    --background: 240 7% 12%; /* deep navy */
+    --foreground: 0 0% 96%;
+    --card: 240 7% 16%; /* slightly raised surface */
+    --card-foreground: 0 0% 96%;
+    --muted: 240 7% 19%;
+    --muted-foreground: 240 4% 70%;
+    --border: 0 0% 100% / 0.1;
+
+    --primary: 357 67% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 43 71% 60%;
+    --secondary-foreground: 240 7% 12%;
+    --accent: 43 71% 60%;
+    --accent-foreground: 240 7% 12%;
+    --destructive: 357 67% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --sidebar: 240 8% 9%;
+    --sidebar-foreground: 0 0% 96%;
+    --sidebar-accent: 43 71% 60%;
+  }
+
+  /* Compact density variant — even tighter. Toggle via `data-density="compact"` on <html>. */
+  :root[data-density="compact"] {
+    --density-row: 32px;
+    --density-th: 28px;
+    --density-input: 28px;
+    --density-button: 32px;
+    --density-padding-x: 12px;
+    --density-padding-y: 8px;
+    --density-gap: 12px;
+  }
+
+  * {
+    @apply border-border;
+  }
+  html,
+  body {
+    height: 100%;
+  }
+  body {
+    @apply bg-background text-foreground;
+    /* Body text: bumped from 13px → 14px to clear the WCAG legibility floor.
+       Still tight enough for an admin tool; lg/xl scale is unchanged. */
+    font-size: 14px;
+    line-height: 1.55;
+    font-feature-settings: "cv11", "ss01", "ss03";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Visible focus ring across the app — accessibility. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /* Coarse-pointer (mobile/tablet) bumps interactive surfaces to 44px so the
+     dense desktop layout still hits the WCAG AA touch-target floor.
+     Scoped to buttons + explicit role=button only — inline `<a>` text links
+     in paragraphs would otherwise expand and break flow. */
+  @media (pointer: coarse) {
+    button,
+    [role="button"] {
+      min-height: 44px;
+    }
+  }
+
+  /* Tabular numerals everywhere — prevents KPI flicker mid-count-up. */
+  .tabnum {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Skeleton shimmer surface (token-driven so it adapts to dark mode later). */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted)) 0%,
+    hsl(var(--muted) / 0.5) 50%,
+    hsl(var(--muted)) 100%
+  );
+  background-size: 200% 100%;
+  @apply animate-shimmer rounded-md;
+}
+
+/* Geometric pattern used by the login page background. */
+.seu-pattern {
+  background-color: #31313b;
+  background-image:
+    radial-gradient(
+      circle at 20% 30%,
+      rgba(228, 189, 79, 0.06) 0,
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 80% 70%,
+      rgba(177, 34, 42, 0.1) 0,
+      transparent 35%
+    ),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.02) 25%, transparent 25%),
+    linear-gradient(225deg, rgba(255, 255, 255, 0.02) 25%, transparent 25%);
+  background-size:
+    100% 100%,
+    100% 100%,
+    24px 24px,
+    24px 24px;
+}
+
+/* Sticky table header surface — applied to <thead> on dense tables. */
+.dense-thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: hsl(var(--muted) / 0.9);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+/* Reduce-motion respect — disable non-essential animations. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

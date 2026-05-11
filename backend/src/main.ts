@@ -48,8 +48,9 @@ async function bootstrap(): Promise<void> {
   );
 
   // Parse cookies on the incoming request (read by the auth controller's
-  // refresh-token cookie path).
-  app.use(cookieParser());
+  // refresh-token cookie path). When `COOKIE_SECRET` is provided we sign
+  // cookies, enabling signed-cookie verification for future endpoints.
+  app.use(cookieParser(process.env.COOKIE_SECRET || undefined));
 
   // Request-id propagation for log correlation. Generates a UUID per request
   // (or accepts a client-supplied X-Request-Id) and echoes it back on the
@@ -64,11 +65,31 @@ async function bootstrap(): Promise<void> {
     next();
   });
 
-  app.enableCors({
-    origin: cfg.adminWebOrigin === '*' ? true : cfg.adminWebOrigin.split(',').map((s) => s.trim()),
-    credentials: true,
-    exposedHeaders: ['X-Request-Id'],
-  });
+  // Refuse the `*` + credentials combination — browsers reject it at runtime
+  // and it gives the operator a false sense of working CORS. In production
+  // require an explicit allow-list of origins; in development log a warning.
+  if (cfg.adminWebOrigin === '*') {
+    if (cfg.nodeEnv === 'production') {
+      throw new Error(
+        'ADMIN_WEB_ORIGIN=* is not allowed in production (credentials require explicit origins).',
+      );
+    }
+    Logger.warn(
+      'ADMIN_WEB_ORIGIN=* — using a permissive non-credentialed CORS policy.',
+      'Bootstrap',
+    );
+    app.enableCors({
+      origin: true,
+      credentials: false,
+      exposedHeaders: ['X-Request-Id'],
+    });
+  } else {
+    app.enableCors({
+      origin: cfg.adminWebOrigin.split(',').map((s) => s.trim()),
+      credentials: true,
+      exposedHeaders: ['X-Request-Id'],
+    });
+  }
 
   app.useGlobalPipes(buildValidationPipe());
 
@@ -77,8 +98,8 @@ async function bootstrap(): Promise<void> {
 
   // Bull-Board admin UI for inspecting Bull queues. Mounted on
   // `/{apiPrefix}/admin/queues`, behind a Bearer-token middleware that
-  // requires `role === 'admin'`. Tokens may also be supplied via
-  // `?access_token=…` so an admin can open the UI from a deep link.
+  // requires `role === 'admin'`. The token must be supplied via the
+  // `Authorization` header — query-string access has been removed.
   try {
     const jwt = app.get(JwtService);
     const prisma = app.get(PrismaService);
@@ -101,10 +122,11 @@ async function bootstrap(): Promise<void> {
 
       const guard = async (req: Request, res: Response, next: NextFunction) => {
         try {
+          // Header-only — `?access_token=` was removed because it leaks the
+          // bearer JWT into proxy access logs, the Referer header and the
+          // browser history bar. Admins paste the token in DevTools instead.
           const headerToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
-          const queryToken =
-            typeof req.query.access_token === 'string' ? req.query.access_token : '';
-          const token = headerToken || queryToken;
+          const token = headerToken;
           if (!token) return res.status(401).send('Unauthorized');
           const payload = (await jwt.verifyAsync(token)) as { sub: string; role?: string };
           if (payload.role !== 'admin') return res.status(403).send('Forbidden');

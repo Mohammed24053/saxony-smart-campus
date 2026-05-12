@@ -1,0 +1,82 @@
+# Spins up a load-test stack: backend + Postgres + Redis sized for the
+# pilot-faculty topology, plus a k6 runner that hammers
+# POST /attendance/scan with 5 000 concurrent virtual users.
+#
+# Usage:
+#   docker compose -f docker-compose.loadtest.yml build
+#   docker compose -f docker-compose.loadtest.yml up --abort-on-container-exit
+#   docker compose -f docker-compose.loadtest.yml down -v
+#
+# Tune VUS=, RAMP_UP=, STEADY=, RAMP_DOWN= via env or `.env.loadtest`.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: smart_campus
+      POSTGRES_USER: campus
+      POSTGRES_PASSWORD: campus
+    # Production-spec sizing for the pilot faculty.
+    command: >
+      postgres
+      -c shared_buffers=512MB
+      -c work_mem=8MB
+      -c max_connections=300
+      -c effective_cache_size=2GB
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U campus -d smart_campus']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    ports:
+      - '55432:5432'
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    ports:
+      - '56379:6379'
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://campus:campus@postgres:5432/smart_campus
+      REDIS_URL: redis://redis:6379
+      JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY?must be set}
+      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY?must be set}
+      INITIAL_ADMIN_PASSWORD: LoadTest!2025
+      NODE_ENV: production
+      LOG_LEVEL: warn
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:3000/health']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    ports:
+      - '53000:3000'
+
+  k6:
+    image: grafana/k6:0.53.0
+    environment:
+      BASE_URL: http://backend:3000/api/v1
+      VUS: ${VUS:-5000}
+      RAMP_UP: ${RAMP_UP:-2m}
+      STEADY: ${STEADY:-5m}
+      RAMP_DOWN: ${RAMP_DOWN:-1m}
+      SESSION_ID: ${SESSION_ID:-session-load-test}
+    volumes:
+      - ./load/k6:/scripts:ro
+      - ./load/k6:/out
+    command: run /scripts/scan.js
+    depends_on:
+      backend: { condition: service_healthy }

@@ -179,6 +179,11 @@ jobs:
           tail -200 /tmp/admin.log || true
           exit 1
 
+      - name: Run backend pilot smoke (login + doctor schedule + session start/qr/end)
+        run: pnpm --filter backend exec ts-node scripts/pilot-smoke.ts
+        env:
+          API_URL: http://localhost:3000/api/v1
+
       - name: Install Playwright browsers
         run: pnpm --filter admin exec playwright install --with-deps chromium
 

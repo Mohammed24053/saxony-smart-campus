@@ -11,6 +11,10 @@ build/
 out/
 **/*.tsbuildinfo
 
+# Playwright artefacts
+admin/test-results/
+admin/playwright-report/
+
 # Env / secrets
 .env
 .env.local

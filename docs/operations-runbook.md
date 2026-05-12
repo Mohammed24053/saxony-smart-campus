@@ -149,7 +149,31 @@ to the relevant migration folder and apply it with `psql`. The
 migration table (`_prisma_migrations`) must be updated to remove the
 applied row; otherwise the rolled-back DB will reject the next deploy.
 
-## 9. On-call diagnostics
+## 9. Dress-rehearsal workflow
+
+Run the pilot end-to-end before students show up — twice or three
+times — by combining the smoke and reset scripts:
+
+```bash
+# 1. Wipe last rehearsal's data (preserves admin + catalogue).
+pnpm --filter backend exec ts-node scripts/pilot-reset.ts
+
+# 2. Seed pilot fixtures + exercise login → doctor home → session
+#    start/qr/end against the running backend.
+API_URL=http://localhost:3000/api/v1 \
+  pnpm --filter backend exec ts-node scripts/pilot-smoke.ts
+
+# 3. Now import the real faculty's CSV.
+pnpm --filter backend exec ts-node scripts/sis-import.ts \
+  --file /path/to/students.csv
+```
+
+`pilot-reset.ts` refuses to run when `NODE_ENV=production` unless
+`--force` is passed. The CI's admin-smoke job runs `pilot-smoke.ts` on
+every push so a regression in the doctor flow trips before the pilot
+sees it.
+
+## 10. On-call diagnostics
 
 | Symptom | First thing to check |
 |---|---|
@@ -161,7 +185,7 @@ applied row; otherwise the rolled-back DB will reject the next deploy.
 | `/auth/login` 401 with correct password | TOTP 2FA was turned on for that admin — bypass via the `INITIAL_ADMIN_PASSWORD` admin's recovery codes or seed a fresh admin. |
 | 5xx wave under load | Check Postgres connections — Prisma default pool is 10 per worker. Raise via `DATABASE_URL?connection_limit=...`. |
 
-## 10. Pilot success metrics (record weekly)
+## 11. Pilot success metrics (record weekly)
 
 - Attendance scans / day (target: ≥80% of expected).
 - Median time-to-mark-present from QR rotation (target: <5s).

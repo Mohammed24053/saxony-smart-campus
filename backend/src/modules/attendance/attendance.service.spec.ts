@@ -68,7 +68,11 @@ function setup(
   } as never;
 
   const prisma = {
-    qrCode: { findFirst: jest.fn().mockResolvedValue(opts.qrCodeRow ?? null), create: jest.fn() },
+    qrCode: {
+      findFirst: jest.fn().mockResolvedValue(opts.qrCodeRow ?? null),
+      create: jest.fn(),
+      upsert: jest.fn().mockResolvedValue({}),
+    },
     attendanceSession: {
       findUnique: jest.fn().mockResolvedValue(opts.session ?? null),
       findUniqueOrThrow: jest.fn().mockResolvedValue(opts.session),

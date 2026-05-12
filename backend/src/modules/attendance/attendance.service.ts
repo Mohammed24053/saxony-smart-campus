@@ -69,8 +69,14 @@ export class AttendanceService {
       courseId: slot.subjectId,
       intervalSeconds: dto.intervalSeconds,
     });
-    await this.prisma.qrCode.create({
-      data: { sessionId: session.id, token, expiresAt },
+    // Upsert (not create): the TOTP-style HMAC returns the same token
+    // when called twice inside the same rotation window. Retrying or
+    // calling /qr immediately after /start would otherwise hit the
+    // unique constraint on QrCode.token.
+    await this.prisma.qrCode.upsert({
+      where: { token },
+      create: { sessionId: session.id, token, expiresAt },
+      update: { expiresAt },
     });
     await this.redis.setex(
       `qr:session:${session.id}:current`,
@@ -96,7 +102,13 @@ export class AttendanceService {
       courseId: slot.subjectId,
       intervalSeconds,
     });
-    await this.prisma.qrCode.create({ data: { sessionId, token, expiresAt } });
+    // Same rotation-window collision applies here — see startSession()
+    // for the explanation.
+    await this.prisma.qrCode.upsert({
+      where: { token },
+      create: { sessionId, token, expiresAt },
+      update: { expiresAt },
+    });
     await this.redis.setex(`qr:session:${sessionId}:current`, intervalSeconds, token);
     this.gateway.emitQrRefresh(sessionId, token, expiresAt);
     return {

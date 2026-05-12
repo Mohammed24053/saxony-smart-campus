@@ -13,6 +13,12 @@ class ApiClient {
 
   ApiClient._(this.dio);
 
+  /// Public constructor used by tests + dependency-injected fakes. Wraps an
+  /// arbitrary [Dio] (typically one whose interceptors have been replaced
+  /// with stubs) in an [ApiClient] without adding any production-only
+  /// interceptors. Production code keeps using [ApiClient.create].
+  ApiClient.fromDio(this.dio);
+
   factory ApiClient.create() {
     final dio = Dio(BaseOptions(
       baseUrl: kApiBaseUrl,

@@ -21,11 +21,11 @@ CSV → `User` + `Student` row importer for the pilot faculty's SIS export.
 
 ```bash
 # Dry-run — prints counts, writes nothing.
-pnpm --filter backend exec ts-node ../scripts/sis-import.ts \
-  --file ../scripts/sis-import.example.csv --dry-run
+pnpm --filter backend exec ts-node scripts/sis-import.ts \
+  --file scripts/sis-import.example.csv --dry-run
 
 # Real import (uses the seeded university by default).
-pnpm --filter backend exec ts-node ../scripts/sis-import.ts \
+pnpm --filter backend exec ts-node scripts/sis-import.ts \
   --file /path/to/students.csv
 ```
 
@@ -34,5 +34,6 @@ phone, section, faculty, year) but never overwrites a password that's
 already in use. New rows are created with a default password the
 student is expected to reset on first login.
 
-**Generate-keys script:** `scripts/generate-keys.sh` writes the RS256
-JWT keypair into `backend/.env`. Re-run any time you need to rotate.
+**Generate-keys script:** the repo-root `../scripts/generate-keys.sh`
+writes the RS256 JWT keypair into `backend/.env`. Re-run any time you
+need to rotate.

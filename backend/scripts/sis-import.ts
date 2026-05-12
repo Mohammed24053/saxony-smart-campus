@@ -24,7 +24,10 @@
  *     unique, studentIds are unique, repeated runs no-op.
  *   - Dry-run mode prints what would happen without writing.
  *
- * Usage:
+ * Usage (run from repo root):
+ *   pnpm --filter backend exec ts-node scripts/sis-import.ts \
+ *     --file scripts/sis-import.example.csv [--dry-run]
+ *
  *   pnpm --filter backend exec ts-node scripts/sis-import.ts \
  *     --file /path/to/students.csv \
  *     [--university saxony-egypt] [--dry-run]
@@ -176,7 +179,8 @@ async function main(): Promise<void> {
           data: {
             universityId: university.id,
             name: r.sectionName,
-            studentCount: 0,
+            faculty: r.faculty,
+            year: r.year,
           },
         });
         sectionId = s.id;
@@ -214,10 +218,7 @@ async function main(): Promise<void> {
       continue;
     }
 
-    const passwordHash = await bcrypt.hash(
-      r.password ?? `${r.studentId}!2025`,
-      12,
-    );
+    const passwordHash = await bcrypt.hash(r.password ?? `${r.studentId}!2025`, 12);
 
     if (args.dryRun) {
       created++;
@@ -247,8 +248,7 @@ async function main(): Promise<void> {
   }
 
   console.log(
-    `done. created=${created} updated=${updated} skipped=${skipped} ` +
-      `dryRun=${args.dryRun}`,
+    `done. created=${created} updated=${updated} skipped=${skipped} ` + `dryRun=${args.dryRun}`,
   );
   await prisma.$disconnect();
 }

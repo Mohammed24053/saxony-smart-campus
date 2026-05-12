@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -59,9 +58,8 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen>
   int _rotationSeconds = 30;
   String _qrPayload = 'demo:0';
   String? _sessionId;
-  int _expectedTotal = 45;
+  final int _expectedTotal = 45;
   bool _ending = false;
-  String? _startError;
   final List<_Entry> _present = [];
   final List<_Entry> _absent = [];
   late final TabController _tab =
@@ -108,9 +106,6 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen>
     } catch (e) {
       debugPrint('[doctor] start session failed: $e');
       if (!mounted) return;
-      setState(() {
-        _startError = e.toString();
-      });
       _startDemoTicker();
     }
   }
@@ -183,24 +178,23 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen>
       }
     } catch (e) {
       debugPrint('[doctor] end session failed: $e');
-    } finally {
-      if (!mounted) return;
-      setState(() => _ending = false);
-      // Whether or not the POST succeeded, pop back to the doctor home so
-      // the doctor isn't trapped on the active screen. Prefer the
-      // Material Navigator (always present, also works in widget tests),
-      // then fall back to GoRouter for the production app.
-      final nav = Navigator.maybeOf(context);
-      if (nav != null && nav.canPop()) {
-        nav.pop();
-        return;
-      }
-      try {
-        context.go('/doctor/today');
-      } catch (_) {
-        // No GoRouter in scope (e.g. widget tests) — already-pumped state
-        // is the most we can do.
-      }
+    }
+    if (!mounted) return;
+    setState(() => _ending = false);
+    // Whether or not the POST succeeded, pop back to the doctor home so
+    // the doctor isn't trapped on the active screen. Prefer the
+    // Material Navigator (always present, also works in widget tests),
+    // then fall back to GoRouter for the production app.
+    final nav = Navigator.maybeOf(context);
+    if (nav != null && nav.canPop()) {
+      nav.pop();
+      return;
+    }
+    try {
+      context.go('/doctor/today');
+    } catch (_) {
+      // No GoRouter in scope (e.g. widget tests) — already-pumped state
+      // is the most we can do.
     }
   }
 

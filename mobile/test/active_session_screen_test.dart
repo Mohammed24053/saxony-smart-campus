@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:saxony_smart_campus/core/api_client.dart';
+import 'package:saxony_smart_campus/core/auth_state.dart' show apiProvider;
 import 'package:saxony_smart_campus/features/doctor/active_session_screen.dart';
 
 import 'test_helpers.dart';

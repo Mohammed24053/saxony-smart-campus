@@ -1,0 +1,6 @@
+email,studentId,name,sectionName,faculty,year,phone
+aya.ibrahim@students.saxony-egypt.edu,STU-2024-001,Aya Ibrahim,CS-301-A,Computer Science,3,+201234567001
+mahmoud.hassan@students.saxony-egypt.edu,STU-2024-002,Mahmoud Hassan,CS-301-A,Computer Science,3,+201234567002
+yasmin.ali@students.saxony-egypt.edu,STU-2024-003,Yasmin Ali,CS-301-B,Computer Science,3,
+omar.khaled@students.saxony-egypt.edu,STU-2024-004,Omar Khaled,CS-301-B,Computer Science,3,+201234567004
+layla.saad@students.saxony-egypt.edu,STU-2024-005,Layla Saad,CS-301-C,Computer Science,3,

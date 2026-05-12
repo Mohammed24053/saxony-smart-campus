@@ -53,6 +53,32 @@ export class ScheduleService {
     });
   }
 
+  /**
+   * Returns the slots scheduled for the given user *today* (server-local
+   * day-of-week), ordered by start time. Used by the mobile doctor home
+   * screen (`/me/schedule/today`) and the student dashboard.
+   *
+   * Doctors get all their own slots; students get all slots for their
+   * section. Anyone else (admin, no section) gets an empty list.
+   */
+  async listTodayFor(
+    universityId: string,
+    userId: string,
+    role: 'doctor' | 'student' | 'admin',
+    now: Date = new Date(),
+  ): Promise<ScheduleSlot[]> {
+    const dayOfWeek = now.getDay(); // 0=Sun .. 6=Sat, matches schema comment
+    const all =
+      role === 'doctor'
+        ? await this.listForDoctor(universityId, userId)
+        : role === 'student'
+          ? await this.listForStudent(universityId, userId)
+          : [];
+    return all
+      .filter((s) => s.dayOfWeek === dayOfWeek)
+      .sort((a, b) => (a.startTime < b.startTime ? -1 : a.startTime > b.startTime ? 1 : 0));
+  }
+
   async createSlot(universityId: string, dto: CreateScheduleSlotDto): Promise<ScheduleSlot> {
     await this.assertNoConflict(universityId, dto, undefined);
     return this.prisma.scheduleSlot.create({

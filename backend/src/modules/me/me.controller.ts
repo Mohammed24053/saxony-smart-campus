@@ -17,6 +17,7 @@ import { Request } from 'express';
 import { IsIn, IsOptional, IsString, MinLength } from 'class-validator';
 import { AuthPrincipal, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { ScheduleService } from '../schedule/schedule.service';
 import { MeService } from './me.service';
 
 class UpdateMeDto {
@@ -51,12 +52,27 @@ class PushTokenDto {
 @UseGuards(JwtAuthGuard)
 @Controller('me')
 export class MeController {
-  constructor(private readonly svc: MeService) {}
+  constructor(
+    private readonly svc: MeService,
+    private readonly schedule: ScheduleService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Get the current authenticated user.' })
   me(@CurrentUser() user: AuthPrincipal) {
     return this.svc.getProfile(user.userId);
+  }
+
+  @Get('schedule/today')
+  @ApiOperation({
+    summary: "List the current user's schedule slots for today.",
+    description:
+      'Doctors get all their own slots scheduled today; students get all ' +
+      'slots for their section scheduled today. Used by the mobile doctor ' +
+      'home screen and the student dashboard.',
+  })
+  scheduleToday(@CurrentUser() user: AuthPrincipal) {
+    return this.schedule.listTodayFor(user.universityId, user.userId, user.role);
   }
 
   @Patch()

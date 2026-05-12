@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
+import '../../core/strings.dart';
 import '../../theme/app_theme.dart';
 
 /// Doctor-side QR display widget.
@@ -83,7 +84,10 @@ class QrDisplayWidget extends StatelessWidget {
                 borderRadius: SeuRadius.xlR,
               ),
               child: Text(
-                'Rotates in ${secondsRemaining}s',
+                AppStrings.of(context).fill(
+                  'doctor.rotatesIn',
+                  {'seconds': secondsRemaining},
+                ),
                 style: const TextStyle(
                   color: SeuColors.white,
                   fontSize: 12,

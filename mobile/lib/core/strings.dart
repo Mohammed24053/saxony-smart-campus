@@ -188,6 +188,14 @@ const Map<String, String> _en = {
   'doctor.activeLectureFallback': 'Active lecture',
   'doctor.sectionFallback': 'Section',
   'doctor.roomFallback': 'Room',
+  'doctor.welcome': 'Welcome,',
+  'doctor.welcomeFallback': 'Doctor',
+  'doctor.lectureStartsIn': 'STARTS IN',
+  'doctor.scanPrompt': 'Have students scan the QR before it rotates.',
+  'doctor.rotatesIn': 'Rotates in {seconds}s',
+  'doctor.expectedLabel': 'Expected',
+  'doctor.backToToday': "Back to today's lectures",
+  'doctor.todayLabel': 'TODAY',
 
   // Attendance status (chips)
   'attendance.present': 'Present',
@@ -346,6 +354,14 @@ const Map<String, String> _ar = {
   'doctor.activeLectureFallback': 'محاضرة نشطة',
   'doctor.sectionFallback': 'الشعبة',
   'doctor.roomFallback': 'القاعة',
+  'doctor.welcome': 'أهلاً،',
+  'doctor.welcomeFallback': 'دكتور',
+  'doctor.lectureStartsIn': 'تبدأ بعد',
+  'doctor.scanPrompt': 'اطلب من الطلاب مسح الرمز قبل تحديثه.',
+  'doctor.rotatesIn': 'يتجدد خلال {seconds} ث',
+  'doctor.expectedLabel': 'المتوقع',
+  'doctor.backToToday': 'العودة لمحاضرات اليوم',
+  'doctor.todayLabel': 'اليوم',
 
   // Attendance status (chips)
   'attendance.present': 'حاضر',

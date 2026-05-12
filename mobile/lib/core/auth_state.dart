@@ -31,14 +31,44 @@ class AuthUser {
 
 final apiProvider = Provider<ApiClient>((ref) => ApiClient.create());
 
+/// `true` while the app is still attempting to rehydrate the auth state from
+/// secure storage on cold boot. The splash screen waits on this flag before
+/// routing so we don't flash the login screen for users whose tokens are
+/// still valid (fixes P0-8 "silent session restore").
+final authBootingProvider = StateProvider<bool>((ref) => true);
+
 class AuthNotifier extends StateNotifier<AuthUser?> {
   final Ref ref;
   AuthNotifier(this.ref) : super(null) {
+    // Fire-and-forget: rehydrate via `/me` if we have an access token in
+    // secure storage. Failure paths (no token, expired refresh, network
+    // error) all leave `state == null` which routes the user to /login.
     _restore();
   }
 
   Future<void> _restore() async {
-    // We don't deserialize the user from storage — caller refetches profile.
+    try {
+      final access = await _storage.read(key: 'accessToken');
+      final refresh = await _storage.read(key: 'refreshToken');
+      if (access == null && refresh == null) return;
+      final api = ref.read(apiProvider);
+      // GET /me — the api_client interceptor will automatically refresh on
+      // a 401 using the stored refresh token, so this single call also
+      // exercises the refresh path.
+      final r = await api.dio.get('/me');
+      final data = r.data['data'] as Map<String, dynamic>?;
+      if (data == null) return;
+      state = AuthUser.fromJson(data);
+    } catch (_) {
+      // Best-effort: clear tokens so the next login starts clean.
+      try {
+        await _storage.delete(key: 'accessToken');
+        await _storage.delete(key: 'refreshToken');
+      } catch (_) {/* ignore */}
+    } finally {
+      // Always release the splash gate so the UI can route.
+      ref.read(authBootingProvider.notifier).state = false;
+    }
   }
 
   Future<({bool requires2fa, String? error})> login(

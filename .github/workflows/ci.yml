@@ -106,6 +106,10 @@ jobs:
       REDIS_URL: redis://localhost:6379
       INITIAL_ADMIN_EMAIL: admin@saxony-egypt.edu
       INITIAL_ADMIN_PASSWORD: ChangeMe!2025
+      JWT_REFRESH_SECRET: ci-only-refresh-secret-not-for-production-use-padding-padding
+      QR_HMAC_SECRET: ci-only-qr-hmac-secret-not-for-production-use-padding-padding
+      ADMIN_WEB_ORIGIN: http://localhost:3001
+      NODE_ENV: test
       NEXT_PUBLIC_API_BASE_URL: http://localhost:3000/api/v1
       E2E_ADMIN_URL: http://localhost:3001
       E2E_API_URL: http://localhost:3000/api/v1
@@ -121,17 +125,19 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       # Generate an RS256 keypair on-the-fly. We can't ship a real
-      # keypair in the repo, so derive one per-run and export it.
+      # keypair in the repo, so derive one per-run and export it. The
+      # env var names must match `backend/src/config/jwt.config.ts`:
+      # JWT_ACCESS_PRIVATE_KEY / JWT_ACCESS_PUBLIC_KEY (not JWT_*_KEY).
       - name: Generate JWT keypair
         run: |
           openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 \
             -out /tmp/jwt.key 2>/dev/null
           openssl rsa -pubout -in /tmp/jwt.key -out /tmp/jwt.pub 2>/dev/null
           {
-            echo "JWT_PRIVATE_KEY<<EOF"
+            echo "JWT_ACCESS_PRIVATE_KEY<<EOF"
             cat /tmp/jwt.key
             echo "EOF"
-            echo "JWT_PUBLIC_KEY<<EOF"
+            echo "JWT_ACCESS_PUBLIC_KEY<<EOF"
             cat /tmp/jwt.pub
             echo "EOF"
           } >> "$GITHUB_ENV"
@@ -142,28 +148,36 @@ jobs:
 
       - name: Start backend
         run: |
-          pnpm --filter backend run start &
+          # `nest start` runs in the foreground; spawn it via nohup so the
+          # action step doesn't hang waiting for the long-lived process.
+          nohup pnpm --filter backend run start > /tmp/backend.log 2>&1 &
           echo $! > /tmp/backend.pid
-          # Wait for /health to respond.
-          for i in $(seq 1 30); do
-            if curl -fsS http://localhost:3000/health > /dev/null; then
-              echo "backend up"; exit 0
+          # Wait for /api/v1/health to respond (apiPrefix is `api/v1`).
+          for i in $(seq 1 45); do
+            if curl -fsS http://localhost:3000/api/v1/health > /dev/null; then
+              echo "backend up after ${i} attempts"; exit 0
             fi
             sleep 2
           done
-          echo "backend never became healthy"; exit 1
+          echo "backend never became healthy"
+          echo "---- backend log ----"
+          tail -200 /tmp/backend.log || true
+          exit 1
 
       - name: Start admin (next dev)
         run: |
-          pnpm --filter admin run dev &
+          nohup pnpm --filter admin run dev > /tmp/admin.log 2>&1 &
           echo $! > /tmp/admin.pid
-          for i in $(seq 1 30); do
+          for i in $(seq 1 45); do
             if curl -fsS http://localhost:3001/login > /dev/null; then
-              echo "admin up"; exit 0
+              echo "admin up after ${i} attempts"; exit 0
             fi
             sleep 2
           done
-          echo "admin never became healthy"; exit 1
+          echo "admin never became healthy"
+          echo "---- admin log ----"
+          tail -200 /tmp/admin.log || true
+          exit 1
 
       - name: Install Playwright browsers
         run: pnpm --filter admin exec playwright install --with-deps chromium

@@ -34,6 +34,9 @@ dependencies:
   flutter_animate: ^4.5.0
   google_fonts: ^6.2.1
   connectivity_plus: ^6.0.5
+  # Used to read the currently associated Wi-Fi BSSID as a location-proof
+  # fallback for QR scans when GPS is unavailable (e.g. basement halls).
+  network_info_plus: ^6.1.0
   local_auth: ^2.3.0
 
 dev_dependencies:

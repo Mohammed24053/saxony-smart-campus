@@ -71,6 +71,7 @@ final _routerProvider = Provider<GoRouter>((ref) {
                 s.t('doctor.activeLectureFallback'),
             section: args['section'] as String? ?? s.t('doctor.sectionFallback'),
             room: args['room'] as String? ?? s.t('doctor.roomFallback'),
+            slotId: args['slotId'] as String?,
           );
         },
       ),

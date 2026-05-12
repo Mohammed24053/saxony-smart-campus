@@ -1,9 +1,11 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:network_info_plus/network_info_plus.dart';
 
 import '../../core/auth_state.dart';
 import '../../core/strings.dart';
@@ -38,6 +40,25 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
     );
   }
 
+  /// Reads the currently associated Wi-Fi BSSID as a location-proof
+  /// fallback. Returns null when the platform refuses (iOS without
+  /// `com.apple.developer.networking.wifi-info` entitlement, or Android
+  /// without `ACCESS_FINE_LOCATION`) or when the device isn't on Wi-Fi.
+  Future<String?> _getWifiBssid() async {
+    try {
+      final info = NetworkInfo();
+      final bssid = await info.getWifiBSSID();
+      if (bssid == null || bssid.isEmpty) return null;
+      // Some platforms return the placeholder "02:00:00:00:00:00" when
+      // location permission is missing — treat that as no signal.
+      if (bssid == '02:00:00:00:00:00') return null;
+      return bssid;
+    } catch (e) {
+      debugPrint('[scan] wifi-bssid read skipped: $e');
+      return null;
+    }
+  }
+
   _ScanState _stateFor(String code) {
     switch (code) {
       case 'GPS_OUT_OF_RANGE':
@@ -58,12 +79,22 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
     if (raw == null) return;
     setState(() => _busy = true);
     try {
-      final pos = await _getPosition();
+      // Capture every location-proof channel we can; the backend accepts
+      // whichever the configured room can verify (GPS, Wi-Fi BSSID, BLE).
+      final results = await Future.wait([
+        _getPosition(),
+        _getWifiBssid(),
+      ]);
+      final pos = results[0] as Position?;
+      final wifiBssid = results[1] as String?;
       final api = ref.read(apiProvider);
       final r = await api.dio.post('/attendance/scan', data: {
         'payload': raw,
         if (pos != null) 'gpsLat': pos.latitude,
         if (pos != null) 'gpsLng': pos.longitude,
+        if (wifiBssid != null) 'wifiBssid': wifiBssid,
+        // BLE beacon capture is wired backend-side; mobile scanning is a
+        // future hook once a beacon-fleet provider is selected.
       });
       final data = r.data['data'] as Map<String, dynamic>;
       if (!mounted) return;

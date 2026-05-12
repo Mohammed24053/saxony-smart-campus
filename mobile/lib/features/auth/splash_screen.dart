@@ -2,8 +2,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/auth_state.dart';
 import '../../core/strings.dart';
 import '../../theme/app_theme.dart';
 
@@ -19,27 +21,48 @@ import '../../theme/app_theme.dart';
 /// This is a Flutter-only equivalent of the Rive splash described in the
 /// design brief — once a `.riv` file is provided, swap the `_LogoSquare`
 /// widget for a `RiveAnimation.asset()` and keep the rest as-is.
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key, this.next = '/login'});
 
   final String next;
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends ConsumerState<SplashScreen> {
+  bool _routed = false;
+
   @override
   void initState() {
     super.initState();
-    // Navigate after the animation has played out.
-    Future.delayed(const Duration(milliseconds: 1800), () {
-      if (mounted) context.go(widget.next);
-    });
+    // Navigate when BOTH (a) the splash animation has played for at least
+    // 1.8s and (b) the auth bootstrap ("is there a valid session in
+    // secure storage?") has completed. Whichever finishes second triggers
+    // the route. This fixes the "every cold boot lands on /login" bug.
+    Future.delayed(const Duration(milliseconds: 1800), _maybeRoute);
+  }
+
+  void _maybeRoute() {
+    if (!mounted || _routed) return;
+    final booting = ref.read(authBootingProvider);
+    if (booting) return; // wait for /me to finish; listener below retries
+    _routed = true;
+    final user = ref.read(authProvider);
+    final dest = user == null
+        ? widget.next
+        : (user.role == 'doctor' ? '/doctor/today' : '/home');
+    context.go(dest);
   }
 
   @override
   Widget build(BuildContext context) {
+    // When auth bootstrap completes, try to route (if the 1.8s animation has
+    // also already elapsed). Otherwise the post-frame Future.delayed callback
+    // in initState will route once it fires.
+    ref.listen<bool>(authBootingProvider, (_, booting) {
+      if (!booting) _maybeRoute();
+    });
     return Scaffold(
       backgroundColor: SeuColors.navy,
       body: Stack(

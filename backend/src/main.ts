@@ -16,8 +16,13 @@ import { AppModule } from './app.module';
 import { AppConfig } from './config/app.config';
 import { buildValidationPipe } from './common/pipes/validation.pipe';
 import { PrismaService } from './prisma/prisma.service';
+import { assertProductionConfig } from './common/bootstrap/production-config.guard';
 
 async function bootstrap(): Promise<void> {
+  // Fail-fast in production if any secret / config defaults are still set.
+  // No-op in development and test so local dev keeps working unchanged.
+  assertProductionConfig();
+
   const app = await NestFactory.create(AppModule, { bufferLogs: false });
   const config = app.get(ConfigService);
   const cfg = config.getOrThrow<AppConfig>('app');
@@ -44,8 +49,44 @@ async function bootstrap(): Promise<void> {
       },
       crossOriginEmbedderPolicy: false,
       referrerPolicy: { policy: 'no-referrer' },
+      // Force HSTS for 1y with subdomains+preload (helmet emits this by
+      // default but we make the policy explicit so production deploys
+      // behind a TLS-terminating proxy can't accidentally drop it).
+      strictTransportSecurity:
+        cfg.nodeEnv === 'production'
+          ? { maxAge: 31_536_000, includeSubDomains: true, preload: true }
+          : false,
     }),
   );
+
+  // Permissions-Policy: opt out of every powerful browser feature the API
+  // doesn't need. The admin SPA sets its own (less restrictive) policy
+  // because it actually uses geolocation/camera on the rooms + scan pages.
+  app.use((_req: Request, res: Response, next: NextFunction) => {
+    res.setHeader(
+      'Permissions-Policy',
+      [
+        'accelerometer=()',
+        'autoplay=()',
+        'camera=()',
+        'display-capture=()',
+        'encrypted-media=()',
+        'fullscreen=()',
+        'geolocation=()',
+        'gyroscope=()',
+        'magnetometer=()',
+        'microphone=()',
+        'midi=()',
+        'payment=()',
+        'picture-in-picture=()',
+        'publickey-credentials-get=()',
+        'usb=()',
+        'xr-spatial-tracking=()',
+        'interest-cohort=()',
+      ].join(', '),
+    );
+    next();
+  });
 
   // Parse cookies on the incoming request (read by the auth controller's
   // refresh-token cookie path).
@@ -128,15 +169,28 @@ async function bootstrap(): Promise<void> {
     Logger.warn(`Failed to mount Bull-Board: ${(err as Error)?.message ?? err}`, 'Bootstrap');
   }
 
-  const swagger = new DocumentBuilder()
-    .setTitle('Saxony Smart Campus API')
-    .setDescription('B2B SaaS for university operations.')
-    .setVersion('1.0.0')
-    .addBearerAuth()
-    .addCookieAuth('refreshToken')
-    .build();
-  const document = SwaggerModule.createDocument(app, swagger);
-  SwaggerModule.setup(`${cfg.apiPrefix}/docs`, app, document);
+  // Swagger / OpenAPI explorer. Disabled by default in production because it
+  // both leaks the full route surface and ships UI bundles that don't make
+  // sense to expose to the public internet. Operators can opt back in by
+  // setting `EXPOSE_SWAGGER=true` (e.g. for staging or behind a VPN).
+  const exposeSwagger = cfg.nodeEnv !== 'production' || process.env.EXPOSE_SWAGGER === 'true';
+  if (exposeSwagger) {
+    const swagger = new DocumentBuilder()
+      .setTitle('Saxony Smart Campus API')
+      .setDescription('B2B SaaS for university operations.')
+      .setVersion('1.0.0')
+      .addBearerAuth()
+      .addCookieAuth('refreshToken')
+      .build();
+    const document = SwaggerModule.createDocument(app, swagger);
+    SwaggerModule.setup(`${cfg.apiPrefix}/docs`, app, document);
+    Logger.log(`Swagger UI mounted at /${cfg.apiPrefix}/docs`, 'Bootstrap');
+  } else {
+    Logger.log(
+      `Swagger UI disabled in production (set EXPOSE_SWAGGER=true to enable)`,
+      'Bootstrap',
+    );
+  }
 
   await app.listen(cfg.port);
   Logger.log(

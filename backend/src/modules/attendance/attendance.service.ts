@@ -69,8 +69,14 @@ export class AttendanceService {
       courseId: slot.subjectId,
       intervalSeconds: dto.intervalSeconds,
     });
-    await this.prisma.qrCode.create({
-      data: { sessionId: session.id, token, expiresAt },
+    // Upsert (not create): the TOTP-style HMAC returns the same token
+    // when called twice inside the same rotation window. Retrying or
+    // calling /qr immediately after /start would otherwise hit the
+    // unique constraint on QrCode.token.
+    await this.prisma.qrCode.upsert({
+      where: { token },
+      create: { sessionId: session.id, token, expiresAt },
+      update: { expiresAt },
     });
     await this.redis.setex(
       `qr:session:${session.id}:current`,
@@ -96,7 +102,13 @@ export class AttendanceService {
       courseId: slot.subjectId,
       intervalSeconds,
     });
-    await this.prisma.qrCode.create({ data: { sessionId, token, expiresAt } });
+    // Same rotation-window collision applies here — see startSession()
+    // for the explanation.
+    await this.prisma.qrCode.upsert({
+      where: { token },
+      create: { sessionId, token, expiresAt },
+      update: { expiresAt },
+    });
     await this.redis.setex(`qr:session:${sessionId}:current`, intervalSeconds, token);
     this.gateway.emitQrRefresh(sessionId, token, expiresAt);
     return {
@@ -189,19 +201,96 @@ export class AttendanceService {
 
     // ── Step 3 (already done above) — session active
 
-    // ── Step 4: GPS verification (if room has GPS enabled)
+    // ── Step 4: location-proof verification.
+    //
+    // The room is considered "proof-enabled" if at least one channel is
+    // configured: GPS (lat/lng/radius) or a Wi-Fi BSSID allow-list or a
+    // BLE beacon ID. For a proof-enabled room the scan succeeds when ANY
+    // configured channel passes — that means a student in a basement
+    // lecture hall with no GPS fix can still mark attendance via Wi-Fi,
+    // and a student in a Wi-Fi-down lab can still scan via GPS.
+    //
+    // If no channel is configured the room is proof-disabled and any
+    // student in the section can scan.
     const room = session.scheduleSlot.room;
+    const gpsConfigured = room.gpsEnabled && room.latitude !== null && room.longitude !== null;
+    const wifiConfigured = (room.wifiBssids?.length ?? 0) > 0;
+    const bleConfigured = !!room.bleBeaconId;
+    const anyConfigured = gpsConfigured || wifiConfigured || bleConfigured;
+
     let gpsDistance: number | undefined;
-    if (room.gpsEnabled && room.latitude !== null && room.longitude !== null) {
-      if (dto.gpsLat === undefined || dto.gpsLng === undefined) {
-        throw new AppException(ErrorCodes.GPS_UNAVAILABLE);
+    let proofMethod: 'gps' | 'wifi' | 'ble' | 'none' = 'none';
+    let recordedWifiBssid: string | undefined;
+    let recordedBleBeaconId: string | undefined;
+    const failures: Record<string, unknown> = {};
+
+    if (anyConfigured) {
+      // Try GPS first (when configured + provided).
+      if (gpsConfigured && dto.gpsLat !== undefined && dto.gpsLng !== undefined) {
+        gpsDistance = Math.round(
+          this.gps.distance(dto.gpsLat, dto.gpsLng, room.latitude!, room.longitude!),
+        );
+        if (gpsDistance <= room.gpsRadius) {
+          proofMethod = 'gps';
+        } else {
+          failures.gpsDistance = gpsDistance;
+          failures.gpsRadius = room.gpsRadius;
+        }
       }
-      gpsDistance = Math.round(
-        this.gps.distance(dto.gpsLat, dto.gpsLng, room.latitude, room.longitude),
-      );
-      if (gpsDistance > room.gpsRadius) {
+
+      // Try Wi-Fi BSSID (when configured + provided + GPS not already passed).
+      if (proofMethod === 'none' && wifiConfigured && dto.wifiBssid) {
+        const norm = (b: string) => b.trim().replace(/-/g, ':').toLowerCase();
+        const provided = norm(dto.wifiBssid);
+        recordedWifiBssid = provided;
+        const allowed = room.wifiBssids.map(norm);
+        if (allowed.includes(provided)) {
+          proofMethod = 'wifi';
+        } else {
+          failures.wifiBssid = provided;
+        }
+      }
+
+      // Try BLE beacon (when configured + provided + nothing has passed yet).
+      if (proofMethod === 'none' && bleConfigured && dto.bleBeaconId) {
+        const normBeacon = (b: string) => b.trim().toLowerCase();
+        const providedBeacon = normBeacon(dto.bleBeaconId);
+        recordedBleBeaconId = providedBeacon;
+        if (providedBeacon === normBeacon(room.bleBeaconId!)) {
+          proofMethod = 'ble';
+        } else {
+          failures.bleBeaconId = providedBeacon;
+        }
+      }
+
+      if (proofMethod === 'none') {
+        // Did the client even attempt any of the configured channels?
+        const triedGps = gpsConfigured && dto.gpsLat !== undefined && dto.gpsLng !== undefined;
+        const triedWifi = wifiConfigured && !!dto.wifiBssid;
+        const triedBle = bleConfigured && !!dto.bleBeaconId;
+        const triedAny = triedGps || triedWifi || triedBle;
+
+        if (!triedAny) {
+          // No proof of any configured channel was sent. Surface a clear
+          // "missing proof" error and tell the client which channels the
+          // room can accept so it can prompt for the right permission.
+          // We keep the existing GPS_UNAVAILABLE code so older mobile
+          // clients (which only know about GPS) handle it gracefully.
+          throw new AppException(ErrorCodes.GPS_UNAVAILABLE, {
+            details: {
+              accepted: [
+                ...(gpsConfigured ? ['gps'] : []),
+                ...(wifiConfigured ? ['wifi'] : []),
+                ...(bleConfigured ? ['ble'] : []),
+              ],
+            },
+          });
+        }
+        // The client tried something and it didn't match — surface
+        // out-of-range with the per-channel diagnostics so the doctor or
+        // admin can debug why (BSSID typo, GPS drift, wrong beacon, etc.).
         throw new AppException(ErrorCodes.GPS_OUT_OF_RANGE, {
-          details: { distance: gpsDistance, radius: room.gpsRadius },
+          details: failures,
         });
       }
     }
@@ -230,6 +319,10 @@ export class AttendanceService {
         gpsLat: dto.gpsLat,
         gpsLng: dto.gpsLng,
         gpsDistance,
+        proofMethod,
+        wifiBssid: recordedWifiBssid ?? dto.wifiBssid,
+        bleBeaconId: recordedBleBeaconId ?? dto.bleBeaconId,
+        bleRssi: dto.bleRssi,
         deviceFingerprint: dto.deviceFingerprint,
       },
       update: {},

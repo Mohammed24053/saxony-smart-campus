@@ -100,14 +100,22 @@ class PushNotificationService {
   }
 
   Future<void> _registerToken(ApiClient api, String token) async {
+    // Backend exposes the endpoint at `/me/push-token` (see
+    // backend/src/modules/me/me.controller.ts). The previous `/me/devices`
+    // path silently 404'd, leaving FCM push as a no-op in production.
+    final platform = switch (defaultTargetPlatform) {
+      TargetPlatform.iOS => 'ios',
+      TargetPlatform.android => 'android',
+      _ => 'web',
+    };
     try {
-      await api.dio.post('/me/devices', data: {
+      await api.dio.post('/me/push-token', data: {
         'token': token,
-        'platform': defaultTargetPlatform.name.toLowerCase(),
+        'platform': platform,
       });
     } catch (e) {
       // Soft-fail — the user can still receive push when the token rotates.
-      debugPrint('[push] device-token register failed: $e');
+      debugPrint('[push] push-token register failed: $e');
     }
   }
 }

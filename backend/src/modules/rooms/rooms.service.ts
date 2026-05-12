@@ -7,6 +7,14 @@ import { ErrorCodes } from '../../common/errors/error-codes';
 import { Paginated, paginate } from '../../common/dto/pagination.dto';
 import { CreateRoomDto, UpdateRoomDto } from './dto/room.dto';
 
+/**
+ * Normalises a BSSID to lowercase, colon-separated form so the scan-time
+ * comparison is exact regardless of how the admin typed it in.
+ */
+function normalizeBssid(b: string): string {
+  return b.trim().replace(/-/g, ':').toLowerCase();
+}
+
 @Injectable()
 export class RoomsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -55,6 +63,8 @@ export class RoomsService {
         gpsEnabled: dto.gpsEnabled ?? true,
         building: dto.building,
         floor: dto.floor,
+        wifiBssids: dto.wifiBssids?.map(normalizeBssid) ?? [],
+        bleBeaconId: dto.bleBeaconId?.trim() || null,
         qrCodeStatic: crypto.randomBytes(16).toString('hex'),
       },
     });
@@ -62,7 +72,14 @@ export class RoomsService {
 
   async update(universityId: string, id: string, dto: UpdateRoomDto): Promise<Room> {
     await this.findById(universityId, id);
-    return this.prisma.room.update({ where: { id }, data: { ...dto } });
+    const data: Prisma.RoomUpdateInput = { ...dto };
+    if (dto.wifiBssids !== undefined) {
+      data.wifiBssids = { set: dto.wifiBssids.map(normalizeBssid) };
+    }
+    if (dto.bleBeaconId !== undefined) {
+      data.bleBeaconId = dto.bleBeaconId?.trim() || null;
+    }
+    return this.prisma.room.update({ where: { id }, data });
   }
 
   async softDelete(universityId: string, id: string): Promise<void> {

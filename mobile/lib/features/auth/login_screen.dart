@@ -61,7 +61,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _triggerShake();
       return;
     }
-    if (ref.read(authProvider) != null) context.go('/home');
+    final user = ref.read(authProvider);
+    if (user != null) {
+      context.go(user.role == 'doctor' ? '/doctor/today' : '/home');
+    }
   }
 
   void _triggerShake() {

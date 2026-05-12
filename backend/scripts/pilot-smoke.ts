@@ -3,15 +3,18 @@
  * Pilot integration smoke — exercises the critical doctor-home critical
  * path against a live backend.
  *
- *   1. Idempotently seeds a doctor user + section + subject + room +
- *      schedule-slot for *today* in the seeded university.
+ *   1. Idempotently seeds a doctor + a student (enrolled in the same
+ *      section) + subject + room + schedule-slot for *today* in the
+ *      seeded university.
  *   2. Logs in as admin (verifies seeded admin still works).
  *   3. Logs in as the smoke doctor.
  *   4. GET /me                         → 200, role=doctor.
  *   5. GET /me/schedule/today          → 200, items contains the slot.
  *   6. POST /attendance/session/start  → 200, returns session + qr.
  *   7. GET  /attendance/session/:id/qr → 200, returns rotated qr.
- *   8. POST /attendance/session/:id/end → 200.
+ *   8. Logs in as the smoke student.
+ *   9. POST /attendance/scan           → 200, status ∈ {present, late}.
+ *  10. POST /attendance/session/:id/end → 200.
  *
  * Exits 0 on success, 1 on any failure (with the offending response
  * dumped to stderr so CI logs are actionable). Designed to run as a
@@ -32,6 +35,8 @@ const UNIVERSITY_SLUG = process.env.INITIAL_UNIVERSITY_SLUG ?? 'saxony-egypt';
 
 const DOCTOR_EMAIL = process.env.SMOKE_DOCTOR_EMAIL ?? 'smoke.doctor@saxony-egypt.edu';
 const DOCTOR_PASSWORD = process.env.SMOKE_DOCTOR_PASSWORD ?? 'SmokeDoctor!2025';
+const STUDENT_EMAIL = process.env.SMOKE_STUDENT_EMAIL ?? 'smoke.student@saxony-egypt.edu';
+const STUDENT_PASSWORD = process.env.SMOKE_STUDENT_PASSWORD ?? 'SmokeStudent!2025';
 
 const prisma = new PrismaClient();
 
@@ -67,7 +72,11 @@ async function http(
   return { status: res.status, body };
 }
 
-async function seedFixtures(): Promise<{ slotId: string }> {
+async function seedFixtures(): Promise<{
+  slotId: string;
+  roomLat: number;
+  roomLng: number;
+}> {
   const university = await prisma.university.findUnique({
     where: { slug: UNIVERSITY_SLUG },
   });
@@ -122,6 +131,51 @@ async function seedFixtures(): Promise<{ slotId: string }> {
     where: { universityId: university!.id, name: 'Lecture Hall A' },
   }))!;
 
+  // Student user enrolled in the smoke section (idempotent).
+  let studentUser = await prisma.user.findUnique({
+    where: { email: STUDENT_EMAIL },
+  });
+  if (!studentUser) {
+    studentUser = await prisma.user.create({
+      data: {
+        universityId: university!.id,
+        role: UserRole.student,
+        name: 'Pilot Smoke Student',
+        email: STUDENT_EMAIL,
+        passwordHash: await bcrypt.hash(STUDENT_PASSWORD, 12),
+        isActive: true,
+        student: {
+          create: {
+            studentId: 'SMOKE-STU-001',
+            sectionId: section.id,
+            faculty: 'Computer Science',
+            year: 3,
+          },
+        },
+      },
+    });
+  } else {
+    const existing = await prisma.student.findUnique({
+      where: { id: studentUser.id },
+    });
+    if (!existing) {
+      await prisma.student.create({
+        data: {
+          id: studentUser.id,
+          studentId: 'SMOKE-STU-001',
+          sectionId: section.id,
+          faculty: 'Computer Science',
+          year: 3,
+        },
+      });
+    } else if (existing.sectionId !== section.id) {
+      await prisma.student.update({
+        where: { id: studentUser.id },
+        data: { sectionId: section.id },
+      });
+    }
+  }
+
   // Today's slot — overlapping the current minute so the doctor home's
   // "starting now" filter picks it up. dayOfWeek 0..6 with Sun=0.
   const now = new Date();
@@ -168,7 +222,11 @@ async function seedFixtures(): Promise<{ slotId: string }> {
     data: { status: 'closed', endedAt: new Date() },
   });
 
-  return { slotId: slot.id };
+  return {
+    slotId: slot.id,
+    roomLat: room.latitude!,
+    roomLng: room.longitude!,
+  };
 }
 
 async function login(email: string, password: string): Promise<string> {
@@ -183,7 +241,7 @@ async function login(email: string, password: string): Promise<string> {
 
 async function main(): Promise<void> {
   console.log(`smoke: api=${API_URL} university=${UNIVERSITY_SLUG}`);
-  const { slotId } = await seedFixtures();
+  const { slotId, roomLat, roomLng } = await seedFixtures();
   console.log(`smoke: fixtures ready (slot ${slotId})`);
 
   const adminToken = await login(ADMIN_EMAIL, ADMIN_PASSWORD);
@@ -232,6 +290,28 @@ async function main(): Promise<void> {
   const rotatedQr = qr.body?.data?.payload ?? qr.body?.data?.qrPayload;
   if (!rotatedQr) fail('qr: missing payload', qr);
   console.log('smoke: GET /session/:id/qr OK');
+
+  // ── Student scan leg ──
+  const studentToken = await login(STUDENT_EMAIL, STUDENT_PASSWORD);
+  console.log('smoke: student login OK');
+
+  const scan = await http('POST', '/attendance/scan', {
+    token: studentToken,
+    body: {
+      payload: rotatedQr,
+      gpsLat: roomLat,
+      gpsLng: roomLng,
+      deviceFingerprint: 'smoke-device-fp-001',
+    },
+  });
+  if (scan.status !== 200 && scan.status !== 201) {
+    fail('POST /attendance/scan', scan);
+  }
+  const scanStatus = scan.body?.data?.status;
+  if (scanStatus !== 'present' && scanStatus !== 'late') {
+    fail('scan: unexpected status', scan);
+  }
+  console.log(`smoke: POST /attendance/scan OK (status=${scanStatus})`);
 
   const end = await http('POST', `/attendance/session/${sessionId}/end`, {
     token: doctorToken,

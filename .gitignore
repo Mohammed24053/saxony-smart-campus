@@ -66,3 +66,4 @@ minio-data/
 *.pem
 *.key
 !backend/prisma/dev.db.example
+load/k6/data/

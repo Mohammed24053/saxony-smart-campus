@@ -58,7 +58,7 @@ services:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
-      test: ['CMD', 'wget', '-qO-', 'http://localhost:3000/health']
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:3000/api/v1/health']
       interval: 5s
       timeout: 3s
       retries: 30
@@ -70,13 +70,13 @@ services:
     environment:
       BASE_URL: http://backend:3000/api/v1
       VUS: ${VUS:-5000}
-      RAMP_UP: ${RAMP_UP:-2m}
-      STEADY: ${STEADY:-5m}
-      RAMP_DOWN: ${RAMP_DOWN:-1m}
-      SESSION_ID: ${SESSION_ID:-session-load-test}
+      MAX_DURATION: ${MAX_DURATION:-10m}
+      DOCTOR_EMAIL: ${DOCTOR_EMAIL:-loadtest.doctor@saxony-egypt.edu}
+      DOCTOR_PASSWORD: ${DOCTOR_PASSWORD:-LoadTest!2025}
+      STUDENT_PASSWORD: ${STUDENT_PASSWORD:-LoadTest!2025}
     volumes:
       - ./load/k6:/scripts:ro
       - ./load/k6:/out
-    command: run /scripts/scan.js
+    command: run --summary-export=/out/summary.json /scripts/scan.js
     depends_on:
       backend: { condition: service_healthy }

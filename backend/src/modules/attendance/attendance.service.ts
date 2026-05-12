@@ -189,19 +189,79 @@ export class AttendanceService {
 
     // ── Step 3 (already done above) — session active
 
-    // ── Step 4: GPS verification (if room has GPS enabled)
+    // ── Step 4: location-proof verification.
+    //
+    // The room is considered "proof-enabled" if at least one channel is
+    // configured: GPS (lat/lng/radius) or a Wi-Fi BSSID allow-list or a
+    // BLE beacon ID. For a proof-enabled room the scan succeeds when ANY
+    // configured channel passes — that means a student in a basement
+    // lecture hall with no GPS fix can still mark attendance via Wi-Fi,
+    // and a student in a Wi-Fi-down lab can still scan via GPS.
+    //
+    // If no channel is configured the room is proof-disabled and any
+    // student in the section can scan.
     const room = session.scheduleSlot.room;
+    const gpsConfigured = room.gpsEnabled && room.latitude !== null && room.longitude !== null;
+    const wifiConfigured = (room.wifiBssids?.length ?? 0) > 0;
+    const bleConfigured = !!room.bleBeaconId;
+    const anyConfigured = gpsConfigured || wifiConfigured || bleConfigured;
+
     let gpsDistance: number | undefined;
-    if (room.gpsEnabled && room.latitude !== null && room.longitude !== null) {
-      if (dto.gpsLat === undefined || dto.gpsLng === undefined) {
-        throw new AppException(ErrorCodes.GPS_UNAVAILABLE);
+    let proofMethod: 'gps' | 'wifi' | 'ble' | 'none' = 'none';
+    const failures: Record<string, unknown> = {};
+
+    if (anyConfigured) {
+      // Try GPS first (when configured + provided).
+      if (gpsConfigured && dto.gpsLat !== undefined && dto.gpsLng !== undefined) {
+        gpsDistance = Math.round(
+          this.gps.distance(dto.gpsLat, dto.gpsLng, room.latitude!, room.longitude!),
+        );
+        if (gpsDistance <= room.gpsRadius) {
+          proofMethod = 'gps';
+        } else {
+          failures.gpsDistance = gpsDistance;
+          failures.gpsRadius = room.gpsRadius;
+        }
       }
-      gpsDistance = Math.round(
-        this.gps.distance(dto.gpsLat, dto.gpsLng, room.latitude, room.longitude),
-      );
-      if (gpsDistance > room.gpsRadius) {
+
+      // Try Wi-Fi BSSID (when configured + provided + GPS not already passed).
+      if (proofMethod === 'none' && wifiConfigured && dto.wifiBssid) {
+        const norm = (b: string) => b.trim().toLowerCase();
+        const provided = norm(dto.wifiBssid);
+        const allowed = room.wifiBssids.map(norm);
+        if (allowed.includes(provided)) {
+          proofMethod = 'wifi';
+        } else {
+          failures.wifiBssid = provided;
+        }
+      }
+
+      // Try BLE beacon (when configured + provided + nothing has passed yet).
+      if (proofMethod === 'none' && bleConfigured && dto.bleBeaconId) {
+        if (dto.bleBeaconId.trim() === room.bleBeaconId!.trim()) {
+          proofMethod = 'ble';
+        } else {
+          failures.bleBeaconId = dto.bleBeaconId;
+        }
+      }
+
+      if (proofMethod === 'none') {
+        // The student is proof-enabled-room but didn't pass any channel.
+        // If GPS was configured and the only thing missing is the GPS
+        // payload, keep the original GPS_UNAVAILABLE code so existing
+        // clients see no behavioural regression.
+        if (
+          gpsConfigured &&
+          (dto.gpsLat === undefined || dto.gpsLng === undefined) &&
+          !dto.wifiBssid &&
+          !dto.bleBeaconId
+        ) {
+          throw new AppException(ErrorCodes.GPS_UNAVAILABLE);
+        }
+        // Otherwise the student tried something and it didn't match —
+        // surface a generic out-of-range with the per-channel diagnostics.
         throw new AppException(ErrorCodes.GPS_OUT_OF_RANGE, {
-          details: { distance: gpsDistance, radius: room.gpsRadius },
+          details: failures,
         });
       }
     }
@@ -230,6 +290,10 @@ export class AttendanceService {
         gpsLat: dto.gpsLat,
         gpsLng: dto.gpsLng,
         gpsDistance,
+        proofMethod,
+        wifiBssid: dto.wifiBssid,
+        bleBeaconId: dto.bleBeaconId,
+        bleRssi: dto.bleRssi,
         deviceFingerprint: dto.deviceFingerprint,
       },
       update: {},

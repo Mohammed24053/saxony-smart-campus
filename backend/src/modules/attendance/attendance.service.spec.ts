@@ -250,6 +250,165 @@ describe('AttendanceService.scan — 5-step verification', () => {
       svc.scan('uni1', { ...studentPrincipal, role: 'doctor' }, { payload: '{}' }),
     ).rejects.toMatchObject({ code: ErrorCodes.FORBIDDEN });
   });
+
+  // ── Wi-Fi BSSID + BLE beacon fallback paths ───────────────────────────────
+
+  const wifiSession = {
+    ...goodSession,
+    scheduleSlot: {
+      ...goodSession.scheduleSlot,
+      room: {
+        latitude: null,
+        longitude: null,
+        gpsRadius: 50,
+        gpsEnabled: false,
+        wifiBssids: ['AA:BB:CC:DD:EE:01', 'aa:bb:cc:dd:ee:02'],
+        bleBeaconId: null,
+      },
+    },
+  };
+
+  it('Step 4 (Wi-Fi): accepts a scan whose BSSID matches the room allow-list', async () => {
+    const { svc, prisma } = setup({
+      session: wifiSession,
+      enrolledStudent: { id: 'stu1', sectionId: 'sec1' },
+    });
+    const r = await svc.scan('uni1', studentPrincipal, {
+      payload: '{}',
+      wifiBssid: 'aa:bb:cc:dd:ee:01',
+    });
+    expect(r.status).toBe('present');
+    expect((prisma.attendanceRecord as any).upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ proofMethod: 'wifi', wifiBssid: 'aa:bb:cc:dd:ee:01' }),
+      }),
+    );
+  });
+
+  it('Step 4 (Wi-Fi): rejects a scan whose BSSID is not on the room allow-list', async () => {
+    const { svc } = setup({
+      session: wifiSession,
+      enrolledStudent: { id: 'stu1', sectionId: 'sec1' },
+    });
+    await expect(
+      svc.scan('uni1', studentPrincipal, {
+        payload: '{}',
+        wifiBssid: '11:22:33:44:55:66',
+      }),
+    ).rejects.toMatchObject({ code: ErrorCodes.GPS_OUT_OF_RANGE });
+  });
+
+  const bleSession = {
+    ...goodSession,
+    scheduleSlot: {
+      ...goodSession.scheduleSlot,
+      room: {
+        latitude: null,
+        longitude: null,
+        gpsRadius: 50,
+        gpsEnabled: false,
+        wifiBssids: [],
+        bleBeaconId: 'seu-room-1-uuid:1:42',
+      },
+    },
+  };
+
+  it('Step 4 (BLE): accepts a scan whose beacon ID matches the room beacon', async () => {
+    const { svc, prisma } = setup({
+      session: bleSession,
+      enrolledStudent: { id: 'stu1', sectionId: 'sec1' },
+    });
+    const r = await svc.scan('uni1', studentPrincipal, {
+      payload: '{}',
+      bleBeaconId: 'seu-room-1-uuid:1:42',
+      bleRssi: -55,
+    });
+    expect(r.status).toBe('present');
+    expect((prisma.attendanceRecord as any).upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ proofMethod: 'ble', bleRssi: -55 }),
+      }),
+    );
+  });
+
+  const multiSession = {
+    ...goodSession,
+    scheduleSlot: {
+      ...goodSession.scheduleSlot,
+      room: {
+        latitude: 30.0,
+        longitude: 31.0,
+        gpsRadius: 50,
+        gpsEnabled: true,
+        wifiBssids: ['AA:BB:CC:DD:EE:01'],
+        bleBeaconId: null,
+      },
+    },
+  };
+
+  it('Step 4 (multi): GPS in range wins even when Wi-Fi is also configured', async () => {
+    const { svc, prisma } = setup({
+      session: multiSession,
+      enrolledStudent: { id: 'stu1', sectionId: 'sec1' },
+    });
+    await svc.scan('uni1', studentPrincipal, {
+      payload: '{}',
+      gpsLat: 30.0,
+      gpsLng: 31.0,
+      wifiBssid: 'AA:BB:CC:DD:EE:01',
+    });
+    expect((prisma.attendanceRecord as any).upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ proofMethod: 'gps' }),
+      }),
+    );
+  });
+
+  it('Step 4 (multi): GPS out of range falls back to Wi-Fi match', async () => {
+    const { svc, gps, prisma } = setup({
+      session: multiSession,
+      enrolledStudent: { id: 'stu1', sectionId: 'sec1' },
+    });
+    (gps.distance as jest.Mock).mockReturnValue(500); // outside the radius
+    const r = await svc.scan('uni1', studentPrincipal, {
+      payload: '{}',
+      gpsLat: 30.5,
+      gpsLng: 31.5,
+      wifiBssid: 'AA:BB:CC:DD:EE:01',
+    });
+    expect(r.status).toBe('present');
+    expect((prisma.attendanceRecord as any).upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ proofMethod: 'wifi' }),
+      }),
+    );
+  });
+
+  it('Step 4: rejects when GPS fails AND Wi-Fi fails AND BLE fails', async () => {
+    const { svc, gps } = setup({
+      session: {
+        ...multiSession,
+        scheduleSlot: {
+          ...multiSession.scheduleSlot,
+          room: {
+            ...multiSession.scheduleSlot.room,
+            bleBeaconId: 'expected-beacon',
+          },
+        },
+      },
+      enrolledStudent: { id: 'stu1', sectionId: 'sec1' },
+    });
+    (gps.distance as jest.Mock).mockReturnValue(500);
+    await expect(
+      svc.scan('uni1', studentPrincipal, {
+        payload: '{}',
+        gpsLat: 30.5,
+        gpsLng: 31.5,
+        wifiBssid: 'ZZ:ZZ:ZZ:ZZ:ZZ:ZZ',
+        bleBeaconId: 'wrong-beacon',
+      }),
+    ).rejects.toMatchObject({ code: ErrorCodes.GPS_OUT_OF_RANGE });
+  });
 });
 
 describe('AttendanceService.endSession', () => {

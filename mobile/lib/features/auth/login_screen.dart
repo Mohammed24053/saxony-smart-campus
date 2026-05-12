@@ -61,7 +61,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _triggerShake();
       return;
     }
-    if (ref.read(authProvider) != null) context.go('/home');
+    // Post-login navigation is owned by the router (see main.dart): when the
+    // auth state flips to logged-in on a public route, the redirect sends
+    // doctors to /doctor/today and students to /home. Keeping the routing
+    // decision in one place avoids the role mismatch that a hardcoded path
+    // here would cause.
   }
 
   void _triggerShake() {

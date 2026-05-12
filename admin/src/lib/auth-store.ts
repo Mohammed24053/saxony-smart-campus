@@ -15,6 +15,7 @@ export type AuthUser = {
 type State = {
   user: AuthUser | null;
   hydrated: boolean;
+  _setHydrated: () => void;
   login: (
     email: string,
     password: string,
@@ -28,6 +29,7 @@ export const useAuth = create<State>()(
     (set) => ({
       user: null,
       hydrated: false,
+      _setHydrated: () => set({ hydrated: true }),
       async login(email, password, twoFactorCode) {
         try {
           const r = await api.post("/auth/login", {
@@ -64,8 +66,11 @@ export const useAuth = create<State>()(
     }),
     {
       name: "admin-auth",
+      // Flip `hydrated` to true once localStorage has been read so route
+      // guards can wait before yanking the user back to /login on a hard
+      // navigation (e.g. page.goto('/students') in Playwright).
       onRehydrateStorage: () => (s) => {
-        s?.hydrated;
+        if (s) s.hydrated = true;
       },
     },
   ),

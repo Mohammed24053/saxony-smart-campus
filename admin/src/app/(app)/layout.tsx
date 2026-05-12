@@ -11,12 +11,18 @@ import { CommandPalette } from "@/components/command-palette";
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, hydrated } = useAuth();
 
   useEffect(() => {
-    if (!user) router.replace("/login");
-  }, [user, router]);
+    // Wait until zustand persist has finished reading localStorage before
+    // deciding whether to bounce the user to /login. Without this, a hard
+    // navigation (e.g. page.goto('/students') from Playwright, or a manual
+    // page refresh) momentarily sees user=null, kicks the user back to
+    // /login, then rehydrates user a tick later.
+    if (hydrated && !user) router.replace("/login");
+  }, [hydrated, user, router]);
 
+  if (!hydrated) return null;
   if (!user) return null;
   return (
     <div className="flex h-screen bg-background">

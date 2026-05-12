@@ -19,6 +19,8 @@ import { Modal, ConfirmModal } from "@/components/modal";
 import { useToast } from "@/components/seu/toast";
 import { useT } from "@/i18n/i18n";
 
+type RoomType = "lecture" | "lab" | "hall";
+
 type Room = {
   id: string;
   name: string;
@@ -30,11 +32,13 @@ type Room = {
   latitude?: number;
   longitude?: number;
   gpsRadius?: number;
+  wifiBssids?: string[];
+  bleBeaconId?: string | null;
 };
 
 interface RoomForm {
   name: string;
-  type: "lecture_hall" | "lab" | "tutorial_room" | "auditorium";
+  type: RoomType;
   capacity: number;
   building?: string;
   floor?: number;
@@ -42,14 +46,26 @@ interface RoomForm {
   longitude?: number;
   gpsRadius?: number;
   gpsEnabled: boolean;
+  /** newline- or comma-separated BSSIDs entered by the admin */
+  wifiBssidsText: string;
+  bleBeaconId: string;
 }
 
 const empty: RoomForm = {
   name: "",
-  type: "lecture_hall",
+  type: "lecture",
   capacity: 30,
   gpsEnabled: true,
+  wifiBssidsText: "",
+  bleBeaconId: "",
 };
+
+function parseBssids(text: string): string[] {
+  return text
+    .split(/[\s,;]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
 
 export default function RoomsPage() {
   const { t } = useT();
@@ -71,10 +87,16 @@ export default function RoomsPage() {
 
   const save = useMutation({
     mutationFn: async (input: RoomForm) => {
+      const { wifiBssidsText, bleBeaconId, ...rest } = input;
+      const payload = {
+        ...rest,
+        wifiBssids: parseBssids(wifiBssidsText),
+        bleBeaconId: bleBeaconId.trim() || undefined,
+      };
       if (modal.editing) {
-        return (await api.put(`/rooms/${modal.editing.id}`, input)).data;
+        return (await api.put(`/rooms/${modal.editing.id}`, payload)).data;
       }
-      return (await api.post("/rooms", input)).data;
+      return (await api.post("/rooms", payload)).data;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["rooms"] });
@@ -122,6 +144,8 @@ export default function RoomsPage() {
       longitude: r.longitude,
       gpsRadius: r.gpsRadius,
       gpsEnabled: r.gpsEnabled,
+      wifiBssidsText: (r.wifiBssids ?? []).join("\n"),
+      bleBeaconId: r.bleBeaconId ?? "",
     });
     setModal({ open: true, editing: r });
   };
@@ -259,10 +283,9 @@ export default function RoomsPage() {
                 setForm({ ...form, type: e.target.value as RoomForm["type"] })
               }
             >
-              <option value="lecture_hall">Lecture Hall</option>
+              <option value="lecture">Lecture Hall</option>
               <option value="lab">Lab</option>
-              <option value="tutorial_room">Tutorial</option>
-              <option value="auditorium">Auditorium</option>
+              <option value="hall">Hall</option>
             </Select>
           </div>
           <div>
@@ -361,6 +384,41 @@ export default function RoomsPage() {
               />
               GPS enforced
             </label>
+          </div>
+          <div className="col-span-2">
+            <Label htmlFor="wifiBssids">Wi-Fi BSSIDs (optional fallback)</Label>
+            <textarea
+              id="wifiBssids"
+              rows={3}
+              placeholder="aa:bb:cc:dd:ee:ff&#10;11:22:33:44:55:66"
+              value={form.wifiBssidsText}
+              onChange={(e) =>
+                setForm({ ...form, wifiBssidsText: e.target.value })
+              }
+              className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-[13.5px] font-mono tabnum focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              One BSSID per line (also accepts commas / spaces). When set, a
+              scan whose device is on one of these access points is accepted
+              even if GPS is unavailable or out of range.
+            </p>
+          </div>
+          <div className="col-span-2">
+            <Label htmlFor="bleBeaconId">
+              BLE beacon ID (optional fallback)
+            </Label>
+            <Input
+              id="bleBeaconId"
+              placeholder="f7826da6-4fa2-4e98-8024-bc5b71e0893e:1:42"
+              value={form.bleBeaconId}
+              onChange={(e) =>
+                setForm({ ...form, bleBeaconId: e.target.value })
+              }
+            />
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Identifier of the BLE beacon installed in the room. Accepted as a
+              location proof when the student&apos;s device sees it.
+            </p>
           </div>
         </div>
       </Modal>

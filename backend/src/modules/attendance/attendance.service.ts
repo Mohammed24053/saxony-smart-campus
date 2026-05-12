@@ -220,6 +220,8 @@ export class AttendanceService {
 
     let gpsDistance: number | undefined;
     let proofMethod: 'gps' | 'wifi' | 'ble' | 'none' = 'none';
+    let recordedWifiBssid: string | undefined;
+    let recordedBleBeaconId: string | undefined;
     const failures: Record<string, unknown> = {};
 
     if (anyConfigured) {
@@ -238,8 +240,9 @@ export class AttendanceService {
 
       // Try Wi-Fi BSSID (when configured + provided + GPS not already passed).
       if (proofMethod === 'none' && wifiConfigured && dto.wifiBssid) {
-        const norm = (b: string) => b.trim().toLowerCase();
+        const norm = (b: string) => b.trim().replace(/-/g, ':').toLowerCase();
         const provided = norm(dto.wifiBssid);
+        recordedWifiBssid = provided;
         const allowed = room.wifiBssids.map(norm);
         if (allowed.includes(provided)) {
           proofMethod = 'wifi';
@@ -250,28 +253,42 @@ export class AttendanceService {
 
       // Try BLE beacon (when configured + provided + nothing has passed yet).
       if (proofMethod === 'none' && bleConfigured && dto.bleBeaconId) {
-        if (dto.bleBeaconId.trim() === room.bleBeaconId!.trim()) {
+        const normBeacon = (b: string) => b.trim().toLowerCase();
+        const providedBeacon = normBeacon(dto.bleBeaconId);
+        recordedBleBeaconId = providedBeacon;
+        if (providedBeacon === normBeacon(room.bleBeaconId!)) {
           proofMethod = 'ble';
         } else {
-          failures.bleBeaconId = dto.bleBeaconId;
+          failures.bleBeaconId = providedBeacon;
         }
       }
 
       if (proofMethod === 'none') {
-        // The student is proof-enabled-room but didn't pass any channel.
-        // If GPS was configured and the only thing missing is the GPS
-        // payload, keep the original GPS_UNAVAILABLE code so existing
-        // clients see no behavioural regression.
-        if (
-          gpsConfigured &&
-          (dto.gpsLat === undefined || dto.gpsLng === undefined) &&
-          !dto.wifiBssid &&
-          !dto.bleBeaconId
-        ) {
-          throw new AppException(ErrorCodes.GPS_UNAVAILABLE);
+        // Did the client even attempt any of the configured channels?
+        const triedGps = gpsConfigured && dto.gpsLat !== undefined && dto.gpsLng !== undefined;
+        const triedWifi = wifiConfigured && !!dto.wifiBssid;
+        const triedBle = bleConfigured && !!dto.bleBeaconId;
+        const triedAny = triedGps || triedWifi || triedBle;
+
+        if (!triedAny) {
+          // No proof of any configured channel was sent. Surface a clear
+          // "missing proof" error and tell the client which channels the
+          // room can accept so it can prompt for the right permission.
+          // We keep the existing GPS_UNAVAILABLE code so older mobile
+          // clients (which only know about GPS) handle it gracefully.
+          throw new AppException(ErrorCodes.GPS_UNAVAILABLE, {
+            details: {
+              accepted: [
+                ...(gpsConfigured ? ['gps'] : []),
+                ...(wifiConfigured ? ['wifi'] : []),
+                ...(bleConfigured ? ['ble'] : []),
+              ],
+            },
+          });
         }
-        // Otherwise the student tried something and it didn't match —
-        // surface a generic out-of-range with the per-channel diagnostics.
+        // The client tried something and it didn't match — surface
+        // out-of-range with the per-channel diagnostics so the doctor or
+        // admin can debug why (BSSID typo, GPS drift, wrong beacon, etc.).
         throw new AppException(ErrorCodes.GPS_OUT_OF_RANGE, {
           details: failures,
         });
@@ -303,8 +320,8 @@ export class AttendanceService {
         gpsLng: dto.gpsLng,
         gpsDistance,
         proofMethod,
-        wifiBssid: dto.wifiBssid,
-        bleBeaconId: dto.bleBeaconId,
+        wifiBssid: recordedWifiBssid ?? dto.wifiBssid,
+        bleBeaconId: recordedBleBeaconId ?? dto.bleBeaconId,
         bleRssi: dto.bleRssi,
         deviceFingerprint: dto.deviceFingerprint,
       },

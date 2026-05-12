@@ -388,6 +388,99 @@ describe('AttendanceService.scan — 5-step verification', () => {
     );
   });
 
+  it('Step 4 (Wi-Fi only room): rejects with GPS_UNAVAILABLE when no proof was sent', async () => {
+    const { svc } = setup({
+      session: wifiSession,
+      enrolledStudent: { id: 'stu1', sectionId: 'sec1' },
+    });
+    // No gpsLat/gpsLng, no wifiBssid, no bleBeaconId.
+    await expect(svc.scan('uni1', studentPrincipal, { payload: '{}' })).rejects.toMatchObject({
+      code: ErrorCodes.GPS_UNAVAILABLE,
+      details: { accepted: ['wifi'] },
+    });
+  });
+
+  it('Step 4 (Wi-Fi): normalises hyphen-separated and mixed-case BSSIDs', async () => {
+    const { svc, prisma } = setup({
+      session: wifiSession,
+      enrolledStudent: { id: 'stu1', sectionId: 'sec1' },
+    });
+    // Room allows 'AA:BB:CC:DD:EE:01'. Client sends with hyphens + lowercase.
+    const r = await svc.scan('uni1', studentPrincipal, {
+      payload: '{}',
+      wifiBssid: 'aa-bb-cc-dd-ee-01',
+    });
+    expect(r.status).toBe('present');
+    expect((prisma.attendanceRecord as any).upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          proofMethod: 'wifi',
+          // Persisted in canonical (colon, lowercase) form.
+          wifiBssid: 'aa:bb:cc:dd:ee:01',
+        }),
+      }),
+    );
+  });
+
+  it('Step 4 (BLE): rejects with GPS_UNAVAILABLE when the room is BLE-only and no proof was sent', async () => {
+    const { svc } = setup({
+      session: bleSession,
+      enrolledStudent: { id: 'stu1', sectionId: 'sec1' },
+    });
+    await expect(svc.scan('uni1', studentPrincipal, { payload: '{}' })).rejects.toMatchObject({
+      code: ErrorCodes.GPS_UNAVAILABLE,
+      details: { accepted: ['ble'] },
+    });
+  });
+
+  it('Step 4 (BLE): beacon comparison is case-insensitive', async () => {
+    const { svc, prisma } = setup({
+      session: bleSession,
+      enrolledStudent: { id: 'stu1', sectionId: 'sec1' },
+    });
+    const r = await svc.scan('uni1', studentPrincipal, {
+      payload: '{}',
+      bleBeaconId: 'SEU-ROOM-1-UUID:1:42',
+    });
+    expect(r.status).toBe('present');
+    expect((prisma.attendanceRecord as any).upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          proofMethod: 'ble',
+          bleBeaconId: 'seu-room-1-uuid:1:42',
+        }),
+      }),
+    );
+  });
+
+  it('Step 4 (proof-disabled room): accepts any enrolled student with no proof at all', async () => {
+    const openRoomSession = {
+      ...goodSession,
+      scheduleSlot: {
+        ...goodSession.scheduleSlot,
+        room: {
+          latitude: null,
+          longitude: null,
+          gpsRadius: 50,
+          gpsEnabled: false,
+          wifiBssids: [],
+          bleBeaconId: null,
+        },
+      },
+    };
+    const { svc, prisma } = setup({
+      session: openRoomSession,
+      enrolledStudent: { id: 'stu1', sectionId: 'sec1' },
+    });
+    const r = await svc.scan('uni1', studentPrincipal, { payload: '{}' });
+    expect(r.status).toBe('present');
+    expect((prisma.attendanceRecord as any).upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ proofMethod: 'none' }),
+      }),
+    );
+  });
+
   it('Step 4: rejects when GPS fails AND Wi-Fi fails AND BLE fails', async () => {
     const { svc, gps } = setup({
       session: {

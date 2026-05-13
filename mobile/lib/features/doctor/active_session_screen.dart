@@ -102,60 +102,60 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen>
     final s = AppStrings.of(context);
     return Scaffold(
       backgroundColor: SeuColors.cream,
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(
+          108 + MediaQuery.of(context).padding.top,
+        ),
+        child: _SessionHeader(
+          subject: widget.subject,
+          section: widget.section,
+          room: widget.room,
+          onBack: _endLecture,
+        ),
+      ),
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _SessionHeader(
-            subject: widget.subject,
-            section: widget.section,
-            room: widget.room,
-            onBack: _endLecture,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: _QrHero(
+              payload: _qrPayload,
+              seconds: _seconds,
+            ),
           ),
-          Expanded(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                  child: _QrHero(
-                    payload: _qrPayload,
-                    seconds: _seconds,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                  child: _StatsRow(
-                    present: _present.length,
-                    absent: _absent.length,
-                    expected: _expectedTotal,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-                  child: _SegmentedTabs(
-                    controller: _tab,
-                    tabs: [
-                      s.count('doctor.tabPresent', _present.length),
-                      s.count('doctor.tabAbsent', _absent.length),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: TabBarView(
-                    controller: _tab,
-                    children: [
-                      _EntryList(
-                          items: _present,
-                          emptyLabel: s.t('doctor.noScansYet')),
-                      _EntryList(
-                          items: _absent, emptyLabel: s.t('doctor.empty')),
-                    ],
-                  ),
-                ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: _StatsRow(
+              present: _present.length,
+              absent: _absent.length,
+              expected: _expectedTotal,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+            child: _SegmentedTabs(
+              controller: _tab,
+              tabs: [
+                s.count('doctor.tabPresent', _present.length),
+                s.count('doctor.tabAbsent', _absent.length),
               ],
             ),
           ),
-          _SessionBottomBar(onEnd: _endLecture),
+          Expanded(
+            child: TabBarView(
+              controller: _tab,
+              children: [
+                _EntryList(
+                    items: _present,
+                    emptyLabel: s.t('doctor.noScansYet')),
+                _EntryList(
+                    items: _absent, emptyLabel: s.t('doctor.empty')),
+              ],
+            ),
+          ),
         ],
       ),
+      bottomNavigationBar: _SessionBottomBar(onEnd: _endLecture),
     );
   }
 }
@@ -342,24 +342,27 @@ class _QrHero extends StatelessWidget {
     final s = AppStrings.of(context);
     return BentoTile(
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 14),
-      child: Column(
-        children: [
-          QrDisplayWidget(
-            payload: payload,
-            secondsRemaining: seconds,
-            rotationSeconds: 30,
-            size: 200,
-          ),
-          const SizedBox(height: 6),
-          Text(
-            s.t('doctor.scanPrompt'),
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: SeuColors.gray,
-                  fontWeight: FontWeight.w500,
-                ),
-          ),
-        ],
+      child: SizedBox(
+        width: double.infinity,
+        child: Column(
+          children: [
+            QrDisplayWidget(
+              payload: payload,
+              secondsRemaining: seconds,
+              rotationSeconds: 30,
+              size: 200,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              s.t('doctor.scanPrompt'),
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: SeuColors.gray,
+                    fontWeight: FontWeight.w500,
+                  ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -378,30 +381,32 @@ class _StatsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = AppStrings.of(context);
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Expanded(
-          child: _StatTile(
-            label: s.t('doctor.currentlyPresent'),
-            value: present,
-            total: expected,
-            accent: SeuColors.success,
-            icon: Icons.check_circle_outline,
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: _StatTile(
+              label: s.t('doctor.currentlyPresent'),
+              value: present,
+              total: expected,
+              accent: SeuColors.success,
+              icon: Icons.check_circle_outline,
+            ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _StatTile(
-            label: s.t('attendance.absent'),
-            value: math.max(0, expected - present - absent),
-            total: expected,
-            accent: SeuColors.danger,
-            icon: Icons.timelapse_outlined,
-            useLiveCounter: false,
+          const SizedBox(width: 12),
+          Expanded(
+            child: _StatTile(
+              label: s.t('attendance.absent'),
+              value: math.max(0, expected - present - absent),
+              total: expected,
+              accent: SeuColors.danger,
+              icon: Icons.timelapse_outlined,
+              useLiveCounter: false,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

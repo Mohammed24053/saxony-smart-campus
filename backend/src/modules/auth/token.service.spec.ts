@@ -1,9 +1,13 @@
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 import { TokenService } from './token.service';
 import { AppException } from '../../common/errors/app.exception';
 import { ErrorCodes } from '../../common/errors/error-codes';
+
+function sha256(s: string): string {
+  return crypto.createHash('sha256').update(s).digest('hex');
+}
 
 describe('TokenService', () => {
   const config = {
@@ -36,7 +40,7 @@ describe('TokenService', () => {
   });
 
   describe('issuePair', () => {
-    it('creates a refresh-token row hashed with bcrypt', async () => {
+    it('creates a refresh-token row with the SHA-256 fingerprint', async () => {
       const create = jest.fn();
       const prisma = { refreshToken: { create } } as never;
       const svc = new TokenService(jwt, prisma, config);
@@ -51,42 +55,45 @@ describe('TokenService', () => {
       expect(create).toHaveBeenCalledTimes(1);
       const args = create.mock.calls[0][0];
       expect(args.data.userId).toBe('uid');
-      expect(await bcrypt.compare(pair.refreshToken, args.data.tokenHash)).toBe(true);
+      // The stored hash is a SHA-256 hex digest of the raw token, not bcrypt.
+      expect(args.data.tokenHash).toBe(sha256(pair.refreshToken));
+      expect(args.data.tokenHash).toHaveLength(64);
     });
   });
 
   describe('rotateRefreshToken', () => {
     it('rejects unknown refresh tokens with TOKEN_INVALID', async () => {
-      const findMany = jest.fn().mockResolvedValue([]);
-      const prisma = { refreshToken: { findMany } } as never;
+      const findUnique = jest.fn().mockResolvedValue(null);
+      const prisma = { refreshToken: { findUnique } } as never;
       const svc = new TokenService(jwt, prisma, config);
       await expect(svc.rotateRefreshToken('not-real')).rejects.toMatchObject({
         code: ErrorCodes.TOKEN_INVALID,
       });
+      expect(findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { tokenHash: sha256('not-real') } }),
+      );
     });
 
     it('rotates a valid refresh token and revokes the old one', async () => {
       const refresh = 'plain-refresh-token-xyz';
-      const tokenHash = await bcrypt.hash(refresh, 12);
-      const candidates = [
-        {
-          id: 'rt1',
-          tokenHash,
-          revokedAt: null,
-          expiresAt: new Date(Date.now() + 86_400_000),
-          user: {
-            id: 'u1',
-            role: 'admin',
-            universityId: 'uni1',
-            email: 'a@x.com',
-            isActive: true,
-          },
+      const matched = {
+        id: 'rt1',
+        tokenHash: sha256(refresh),
+        revokedAt: null,
+        familyId: 'fam-1',
+        expiresAt: new Date(Date.now() + 86_400_000),
+        user: {
+          id: 'u1',
+          role: 'admin',
+          universityId: 'uni1',
+          email: 'a@x.com',
+          isActive: true,
         },
-      ];
-      const findMany = jest.fn().mockResolvedValue(candidates);
+      };
+      const findUnique = jest.fn().mockResolvedValue(matched);
       const create = jest.fn();
       const update = jest.fn();
-      const prisma = { refreshToken: { findMany, create, update } } as never;
+      const prisma = { refreshToken: { findUnique, create, update } } as never;
       const svc = new TokenService(jwt, prisma, config);
       const pair = await svc.rotateRefreshToken(refresh);
       expect(pair.accessToken).toBe('signed-jwt');
@@ -95,29 +102,54 @@ describe('TokenService', () => {
 
     it('rejects refresh tokens for inactive users', async () => {
       const refresh = 'inactive-token';
-      const tokenHash = await bcrypt.hash(refresh, 12);
-      const candidates = [
-        {
-          id: 'rt1',
-          tokenHash,
-          revokedAt: null,
-          expiresAt: new Date(Date.now() + 86_400_000),
-          user: {
-            id: 'u1',
-            role: 'admin',
-            universityId: 'uni1',
-            email: 'a@x.com',
-            isActive: false,
-          },
+      const matched = {
+        id: 'rt1',
+        tokenHash: sha256(refresh),
+        revokedAt: null,
+        familyId: 'fam-1',
+        expiresAt: new Date(Date.now() + 86_400_000),
+        user: {
+          id: 'u1',
+          role: 'admin',
+          universityId: 'uni1',
+          email: 'a@x.com',
+          isActive: false,
         },
-      ];
-      const prisma = {
-        refreshToken: { findMany: jest.fn().mockResolvedValue(candidates) },
-      } as never;
+      };
+      const findUnique = jest.fn().mockResolvedValue(matched);
+      const prisma = { refreshToken: { findUnique } } as never;
       const svc = new TokenService(jwt, prisma, config);
       await expect(svc.rotateRefreshToken(refresh)).rejects.toMatchObject({
         code: ErrorCodes.TOKEN_INVALID,
       });
+    });
+
+    it('detects re-use of a revoked token and burns the entire family', async () => {
+      const refresh = 'stolen-token';
+      const matched = {
+        id: 'rt1',
+        tokenHash: sha256(refresh),
+        revokedAt: new Date(Date.now() - 60_000),
+        familyId: 'fam-1',
+        expiresAt: new Date(Date.now() + 86_400_000),
+        user: {
+          id: 'u1',
+          role: 'admin',
+          universityId: 'uni1',
+          email: 'a@x.com',
+          isActive: true,
+        },
+      };
+      const findUnique = jest.fn().mockResolvedValue(matched);
+      const updateMany = jest.fn();
+      const prisma = { refreshToken: { findUnique, updateMany } } as never;
+      const svc = new TokenService(jwt, prisma, config);
+      await expect(svc.rotateRefreshToken(refresh)).rejects.toMatchObject({
+        code: ErrorCodes.TOKEN_INVALID,
+      });
+      expect(updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: expect.objectContaining({ familyId: 'fam-1' }) }),
+      );
     });
   });
 });

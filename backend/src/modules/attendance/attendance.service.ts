@@ -155,9 +155,17 @@ export class AttendanceService {
   async scan(universityId: string, student: AuthPrincipal, dto: ScanQrDto): Promise<ScanResult> {
     if (student.role !== 'student') throw new AppException(ErrorCodes.FORBIDDEN);
 
-    // Per-device rate limit: 5 scans / 30s.
+    // Per-student rate limit: 10 scans / 30s. We key on the authenticated
+    // userId so the limit can't be bypassed by omitting `deviceFingerprint`
+    // (the previous keying made the limit optional). We additionally limit
+    // per-device when the client provides a fingerprint, so a compromised
+    // student-token plus device rotation still gets capped.
+    {
+      const ok = await this.redis.rateLimit(`rate:scan:user:${student.userId}`, 10, 30);
+      if (!ok) throw new AppException(ErrorCodes.RATE_LIMITED);
+    }
     if (dto.deviceFingerprint) {
-      const ok = await this.redis.rateLimit(`rate:scan:${dto.deviceFingerprint}`, 5, 30);
+      const ok = await this.redis.rateLimit(`rate:scan:dev:${dto.deviceFingerprint}`, 5, 30);
       if (!ok) throw new AppException(ErrorCodes.RATE_LIMITED);
     }
 

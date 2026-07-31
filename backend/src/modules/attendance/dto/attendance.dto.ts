@@ -1,15 +1,28 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsLatitude, IsLongitude, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsEnum,
+  IsInt,
+  IsLatitude,
+  IsLongitude,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 import { AttendanceStatus } from '@prisma/client';
 
 export class StartSessionDto {
   @ApiProperty()
-  @IsString()
+  @IsUUID()
   scheduleSlotId!: string;
 
   @ApiPropertyOptional({ default: 30 })
   @IsOptional()
-  @IsNumber()
+  @IsInt()
+  @Min(10)
+  @Max(300)
   intervalSeconds?: number;
 
   @ApiPropertyOptional({
@@ -17,7 +30,9 @@ export class StartSessionDto {
     description: 'Minutes after session start before scans are marked late.',
   })
   @IsOptional()
-  @IsNumber()
+  @IsInt()
+  @Min(0)
+  @Max(120)
   lateAfterMinutes?: number;
 }
 
@@ -26,16 +41,18 @@ export class ScanQrDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @MaxLength(2048)
   payload?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @MaxLength(256)
   token?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsString()
+  @IsUUID()
   sessionId?: string;
 
   @ApiPropertyOptional()
@@ -51,6 +68,7 @@ export class ScanQrDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @MaxLength(256)
   deviceFingerprint?: string;
 }
 
@@ -62,5 +80,6 @@ export class ManualOverrideDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @MaxLength(500)
   reason?: string;
 }

@@ -8,6 +8,18 @@ import { ErrorCodes } from '../../common/errors/error-codes';
 import { EmailService } from '../email/email.service';
 import { TokenService } from '../auth/token.service';
 import { AuditService } from '../audit/audit.service';
+import { isStrongPassword } from '../../common/validators/strong-password';
+
+/**
+ * SHA-256 fingerprint of a reset token. The token itself is 32 random bytes
+ * (~256 bits of entropy); SHA-256 is a sufficient one-way hash here and lets
+ * us look up the row in O(1) via the unique index on `tokenHash`. The
+ * previous design used bcrypt + a scan-all-rows loop (max 200), which both
+ * caused silent failures for unlucky users and exposed a DoS vector.
+ */
+function fingerprintToken(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
 
 @Injectable()
 export class PasswordResetService {
@@ -30,7 +42,7 @@ export class PasswordResetService {
     if (!user || !user.isActive || user.deletedAt) return;
 
     const token = crypto.randomBytes(32).toString('base64url');
-    const tokenHash = await bcrypt.hash(token, 10);
+    const tokenHash = fingerprintToken(token);
     const expiresAt = new Date(Date.now() + this.tokenTtlMinutes * 60_000);
     await this.prisma.passwordResetToken.create({
       data: { userId: user.id, tokenHash, expiresAt },
@@ -70,26 +82,19 @@ export class PasswordResetService {
     newPassword: string,
     meta: { ip?: string; ua?: string } = {},
   ): Promise<void> {
-    if (newPassword.length < 8)
+    const strong = isStrongPassword(newPassword);
+    if (!strong.ok)
       throw new AppException(ErrorCodes.VALIDATION_ERROR, {
-        message: 'Password must be at least 8 characters',
+        message: strong.reason ?? 'Password is not strong enough',
       });
 
-    const candidates = await this.prisma.passwordResetToken.findMany({
-      where: { usedAt: null, expiresAt: { gt: new Date() } },
+    const matched = await this.prisma.passwordResetToken.findUnique({
+      where: { tokenHash: fingerprintToken(token) },
       include: { user: true },
-      orderBy: { createdAt: 'desc' },
-      take: 200,
     });
-    let matched = null;
-    for (const c of candidates) {
-      // eslint-disable-next-line no-await-in-loop
-      if (await bcrypt.compare(token, c.tokenHash)) {
-        matched = c;
-        break;
-      }
+    if (!matched || matched.usedAt || matched.expiresAt <= new Date()) {
+      throw new AppException(ErrorCodes.TOKEN_INVALID);
     }
-    if (!matched) throw new AppException(ErrorCodes.TOKEN_INVALID);
 
     const passwordHash = await bcrypt.hash(newPassword, 10);
     await this.prisma.$transaction([

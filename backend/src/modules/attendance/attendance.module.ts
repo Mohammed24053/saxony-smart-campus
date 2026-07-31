@@ -6,9 +6,14 @@ import { AttendanceGateway } from './attendance.gateway';
 import { GpsService } from './gps.service';
 import { QrTokenService } from './qr-token.service';
 import { AtRiskModule } from '../at-risk/at-risk.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [BullModule.registerQueue({ name: 'at-risk' }), forwardRef(() => AtRiskModule)],
+  imports: [
+    BullModule.registerQueue({ name: 'at-risk' }),
+    forwardRef(() => AtRiskModule),
+    AuthModule,
+  ],
   controllers: [AttendanceController],
   providers: [AttendanceService, AttendanceGateway, GpsService, QrTokenService],
   exports: [AttendanceService, QrTokenService, GpsService, AttendanceGateway],

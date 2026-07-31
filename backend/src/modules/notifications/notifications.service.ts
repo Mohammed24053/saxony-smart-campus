@@ -147,7 +147,13 @@ export class NotificationsService {
 
   private async resolveRecipients(universityId: string, args: SendArgs): Promise<string[]> {
     if (args.recipientUserIds && args.recipientUserIds.length > 0) {
-      return [...new Set(args.recipientUserIds)];
+      // Cross-tenant guard: ignore anything outside the caller's university.
+      const unique = [...new Set(args.recipientUserIds)];
+      const allowed = await this.prisma.user.findMany({
+        where: { id: { in: unique }, universityId, deletedAt: null, isActive: true },
+        select: { id: true },
+      });
+      return allowed.map((u) => u.id);
     }
     switch (args.targetType) {
       case 'broadcast': {

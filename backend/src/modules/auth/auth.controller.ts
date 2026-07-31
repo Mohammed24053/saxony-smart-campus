@@ -101,6 +101,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle({ short: { limit: 30, ttl: 60_000 } })
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Revoke the supplied refresh token (or the cookie if absent).' })

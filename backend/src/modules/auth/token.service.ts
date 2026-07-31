@@ -2,12 +2,28 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { UserRole } from '@prisma/client';
-import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { JwtConfig } from '../../config/jwt.config';
 import { AppException } from '../../common/errors/app.exception';
 import { ErrorCodes } from '../../common/errors/error-codes';
+
+/**
+ * HMAC-SHA-256 of the secret over the opaque token. Deterministic — lets us
+ * look refresh tokens up in O(1) via the unique `tokenHash` column instead
+ * of running bcrypt.compare() over hundreds of rows.
+ *
+ * We deliberately keep the secret distinct from the access-token RS256 key:
+ * - JWT_REFRESH_SECRET — symmetric key used here
+ * - JWT_ACCESS_PRIVATE_KEY / PUBLIC_KEY — RS256 keypair for the JWT
+ *
+ * Migration note: existing bcrypt-hashed rows will not match this lookup
+ * after deploy — they live out their 7-day TTL inert, which is equivalent
+ * to a one-time forced re-login. Tradeoff documented in SECURITY_AUDIT §2.3.
+ */
+export function hashRefreshToken(secret: string, token: string): string {
+  return crypto.createHmac('sha256', secret).update(token).digest('hex');
+}
 
 export interface AccessTokenClaims {
   sub: string;
@@ -49,7 +65,7 @@ export class TokenService {
     const cfg = this.config.getOrThrow<JwtConfig>('jwt');
     const accessToken = this.signAccessToken(claims);
     const refreshToken = crypto.randomBytes(48).toString('base64url');
-    const tokenHash = await bcrypt.hash(refreshToken, 12);
+    const tokenHash = hashRefreshToken(cfg.refreshSecret, refreshToken);
     const expiresAt = new Date(Date.now() + this.parseExpiry(cfg.refreshExpires));
     const familyId = meta.familyId ?? crypto.randomUUID();
     await this.prisma.refreshToken.create({
@@ -74,21 +90,14 @@ export class TokenService {
     refreshToken: string,
     meta: { userAgent?: string; ipAddress?: string } = {},
   ): Promise<TokenPair> {
-    // Match against ALL refresh tokens (active + revoked) so we can detect
-    // re-use of a previously rotated token (token theft signal).
-    const candidates = await this.prisma.refreshToken.findMany({
+    // O(1) lookup against ALL refresh tokens (active + revoked) so we can
+    // still detect re-use of a previously rotated token (theft signal).
+    const cfg = this.config.getOrThrow<JwtConfig>('jwt');
+    const lookupHash = hashRefreshToken(cfg.refreshSecret, refreshToken);
+    const matched = await this.prisma.refreshToken.findUnique({
+      where: { tokenHash: lookupHash },
       include: { user: true },
-      orderBy: { createdAt: 'desc' },
-      take: 400,
     });
-    let matched = null;
-    for (const c of candidates) {
-      // eslint-disable-next-line no-await-in-loop
-      if (await bcrypt.compare(refreshToken, c.tokenHash)) {
-        matched = c;
-        break;
-      }
-    }
     if (!matched || !matched.user.isActive) throw new AppException(ErrorCodes.TOKEN_INVALID);
 
     // Token theft: a revoked-or-expired refresh token was presented.
@@ -121,21 +130,16 @@ export class TokenService {
   }
 
   async revokeRefreshToken(refreshToken: string): Promise<void> {
-    const candidates = await this.prisma.refreshToken.findMany({
-      where: { revokedAt: null },
-      orderBy: { createdAt: 'desc' },
-      take: 200,
+    const cfg = this.config.getOrThrow<JwtConfig>('jwt');
+    const lookupHash = hashRefreshToken(cfg.refreshSecret, refreshToken);
+    const matched = await this.prisma.refreshToken.findUnique({
+      where: { tokenHash: lookupHash },
     });
-    for (const c of candidates) {
-      // eslint-disable-next-line no-await-in-loop
-      if (await bcrypt.compare(refreshToken, c.tokenHash)) {
-        await this.prisma.refreshToken.update({
-          where: { id: c.id },
-          data: { revokedAt: new Date() },
-        });
-        return;
-      }
-    }
+    if (!matched || matched.revokedAt) return;
+    await this.prisma.refreshToken.update({
+      where: { id: matched.id },
+      data: { revokedAt: new Date() },
+    });
   }
 
   async revokeAllForUser(userId: string): Promise<void> {

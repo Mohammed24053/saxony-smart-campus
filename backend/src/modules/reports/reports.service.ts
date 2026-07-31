@@ -132,7 +132,19 @@ export class ReportsService {
   }
 }
 
-function csvEscape(s: string): string {
-  if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
-  return s;
+/**
+ * Escapes a value for inclusion in a CSV cell.
+ *
+ * Beyond the standard quote/comma/newline handling, this neutralises the
+ * spreadsheet-formula injection vector (CWE-1236): when a cell begins with
+ * `= + - @ \t \r` Excel, LibreOffice and Google Sheets treat the cell as a
+ * formula and will evaluate `=HYPERLINK(...)`, `=cmd|...`, etc. on import.
+ * Prefixing a single quote forces text mode in every major spreadsheet app.
+ */
+export function csvEscape(s: string): string {
+  const v = s ?? '';
+  const needsFormulaGuard = v.length > 0 && /^[=+\-@\t\r]/.test(v);
+  const guarded = needsFormulaGuard ? `'${v}` : v;
+  if (/[",\n]/.test(guarded)) return `"${guarded.replace(/"/g, '""')}"`;
+  return guarded;
 }

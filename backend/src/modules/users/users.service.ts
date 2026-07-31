@@ -7,6 +7,7 @@ import { AppException } from '../../common/errors/app.exception';
 import { ErrorCodes } from '../../common/errors/error-codes';
 import { Paginated, paginate } from '../../common/dto/pagination.dto';
 import { AuditService } from '../audit/audit.service';
+import { PasswordResetService } from '../password-reset/password-reset.service';
 
 export interface CreateUserInput {
   name: string;
@@ -28,6 +29,7 @@ export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly passwordReset: PasswordResetService,
   ) {}
 
   async list(
@@ -74,8 +76,12 @@ export class UsersService {
     const existing = await this.prisma.user.findUnique({ where: { email: input.email } });
     if (existing)
       throw new AppException(ErrorCodes.VALIDATION_ERROR, { message: 'Email already in use' });
+    // Never echo the plaintext password back to the API caller. If the admin
+    // provides one we accept it and never return it; if they don't, we mint
+    // an unguessable hash and trigger a password-reset email so the user
+    // sets their own credential through the secure reset flow.
     const password = input.password ?? this.generatePassword();
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(password, 12);
     const user = await this.prisma.user.create({
       data: {
         universityId,
@@ -95,7 +101,17 @@ export class UsersService {
       entityId: user.id,
       after: user,
     });
-    return { ...user, temporaryPassword: input.password ? undefined : password };
+    let passwordResetEmailSent = false;
+    if (!input.password && user.email) {
+      try {
+        await this.passwordReset.requestReset(user.email);
+        passwordResetEmailSent = true;
+      } catch {
+        // Email failures should not block user creation; the admin can
+        // re-issue the reset later from POST /users/:id/reset-password.
+      }
+    }
+    return { ...user, passwordResetEmailSent };
   }
 
   async update(universityId: string, actorId: string, id: string, input: UpdateUserInput) {
@@ -157,9 +173,22 @@ export class UsersService {
   async resetPassword(universityId: string, actorId: string, id: string) {
     const user = await this.prisma.user.findFirst({ where: { id, universityId, deletedAt: null } });
     if (!user) throw new AppException(ErrorCodes.NOT_FOUND);
+    // Burn the current password to an unguessable random hash, then email the
+    // user a one-time reset link. We never return the plaintext: the previous
+    // behaviour leaked a fresh credential into the admin response body, browser
+    // history, screen-shares and proxy logs.
     const password = this.generatePassword();
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(password, 12);
     await this.prisma.user.update({ where: { id }, data: { passwordHash } });
+    let passwordResetEmailSent = false;
+    if (user.email) {
+      try {
+        await this.passwordReset.requestReset(user.email);
+        passwordResetEmailSent = true;
+      } catch {
+        // Audit captures the failure path so an operator can investigate.
+      }
+    }
     await this.audit.record({
       universityId,
       actorId,
@@ -167,11 +196,12 @@ export class UsersService {
       entity: 'User',
       entityId: id,
     });
-    return { temporaryPassword: password };
+    return { passwordResetEmailSent };
   }
 
   private generatePassword(): string {
-    const buf = crypto.randomBytes(8).toString('base64url');
-    return `Tmp-${buf}`;
+    // 24 bytes → ~32 base64url chars, ~192 bits of entropy. Used only as a
+    // transient hash seed — never returned to the caller.
+    return crypto.randomBytes(24).toString('base64url');
   }
 }
